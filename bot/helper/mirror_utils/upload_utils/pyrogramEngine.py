@@ -88,7 +88,7 @@ class TgUploader:
         if CUSTOM_FILENAME is not None:
             if "www" in file_ :
                 file__ = file_.split(maxsplit=1)[1]
-            else
+            else:
                 file__ = file_
             cap_mono = f"{CUSTOM_FILENAME} <b>{file__}</b>"
             file_ = f"{CUSTOM_FILENAME} {file__}"
