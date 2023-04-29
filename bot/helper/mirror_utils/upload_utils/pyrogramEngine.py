@@ -89,7 +89,7 @@ class TgUploader:
             if "www" in file_ :
                 file__ = file_.split(maxsplit=1)[1]
             else:
-                file__ = file_
+                file_ = file_
             if CAPTION and all_edit:
                 CAPTION = CAPTION.replace('\|', '%%').replace('\s', ' ')
                 slit = CAPTION.split("|")
