@@ -94,7 +94,7 @@ class TgUploader:
                 CAPTION = CAPTION.replace('\|', '%%').replace('\s', ' ')
                 slit = CAPTION.split("|")
                 cap_mono = slit[0].format(
-                filename__ = file_,
+                filename = file_,
                 size = get_readable_file_size(ospath.getsize(up_path)))
             cap_mono = f"{CUSTOM_FILENAME} <b>{file__}</b>"
             file_ = f"{CUSTOM_FILENAME} {file__}"
