@@ -3,16 +3,16 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from telegram.ext import CommandHandler
-from bot import LOGGER, dispatcher, PAID_SERVICE, PAID_USERS, OWNER_ID
+from bot import LOGGER, dispatcher, OWNER_ID
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage
 
 
 def scrape(update, context):
-    user_id_ = update.message.from_user.id
+    user_id_ = update.message.from_owner.id
     if PAID_SERVICE is True:
-        if user_id_ in PAID_USERS and OWNER_ID:
+        if user_id_ in OWNER_ID:
             message:Message = update.effective_message
             link = None
             if message.reply_to_message: link = message.reply_to_message.text
