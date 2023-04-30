@@ -89,15 +89,7 @@ class TgUploader:
             if "www" in file_ :
                 file__ = file_.split(maxsplit=1)[1]
             else:
-                file_ = file_
-    def change_filename(self, file_, dirpath=None, dirpath=None, up_path=None, all_edit=True):    
-            user_dict = user_data.get
-            if CAPTION and all_edit:
-                CAPTION = CAPTION.replace('\|', '%%').replace('\s', ' ')
-                slit = CAPTION.split("|")
-                cap_mono = slit[0].format(
-                filename = file_,
-                size = get_readable_file_size(ospath.getsize(up_path)))
+                file__ = file_
             cap_mono = f"{CUSTOM_FILENAME} <b>{file__}</b>"
             file_ = f"{CUSTOM_FILENAME} {file__}"
             new_path = ospath.join(dirpath, file_)
