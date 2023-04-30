@@ -5,7 +5,7 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 
-from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, change_filename, EXTENSION_FILTER, app, app_session, BOT_PM, LEECH_LOG
+from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, app, app_session, BOT_PM, LEECH_LOG
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
@@ -95,7 +95,7 @@ class TgUploader:
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
             up_path = new_path
-         else:
+        else:
             cap_mono = f"<b>{file_}</b>"
         notMedia = False
         thumb = self.__thumb
