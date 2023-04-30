@@ -10,8 +10,8 @@ from bot.helper.telegram_helper.message_utils import sendMessage
 
 
 def scrape(update, context):
-    user_id_ = update.message.from_owner.id
-    if PAID_SERVICE is True:
+    
+    if PAID_SERVICE is false:
         if user_id_ in OWNER_ID:
             message:Message = update.effective_message
             link = None
