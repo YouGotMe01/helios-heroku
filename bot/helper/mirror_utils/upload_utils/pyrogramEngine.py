@@ -96,7 +96,7 @@ class TgUploader:
             osrename(up_path, new_path)
             up_path = new_path
         else:
-            cap_mono = f"<b>{file__}</b>\n\n<b>𝗡𝗲𝘄 𝗨𝗽𝗱𝗮𝘁𝗲𝘀 𝗝𝗼𝗶𝗻 𝗡𝗼𝘄</b>\n👇👇👇👇👇👇👇👇\nhttps://telegram.me/+KgorOpsvehIyOTIx"
+            cap_mono = f"<b>{file_}</b>\n\n<b>𝗡𝗲𝘄 𝗨𝗽𝗱𝗮𝘁𝗲𝘀 𝗝𝗼𝗶𝗻 𝗡𝗼𝘄</b>\n👇👇👇👇👇👇👇👇\nhttps://telegram.me/+KgorOpsvehIyOTIx"
         notMedia = False
         thumb = self.__thumb
         self.__is_corrupted = False
