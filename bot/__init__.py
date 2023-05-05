@@ -78,6 +78,7 @@ Interval = []
 DRIVES_NAMES = []
 DRIVES_IDS = []
 INDEX_URLS = []
+CAP_DICT = {}
 
 try:
     if bool(getConfig('_____REMOVE_THIS_LINE_____')):
