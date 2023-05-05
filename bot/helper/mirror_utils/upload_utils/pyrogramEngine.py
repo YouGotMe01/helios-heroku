@@ -123,7 +123,7 @@ class TgUploader:
                         osrename(up_path, new_path)
                         up_path = new_path
                     self.__sent_msg = client.send_video, parse_mode=ParseMode.HTML(chat_id=leechchat, video=up_path,
-                                                                  caption=cap_mono,              caption=print,
+                                                                  caption=cap_mono,  
                                                                   duration=duration,
                                                                   width=width,
                                                                   height=height,
