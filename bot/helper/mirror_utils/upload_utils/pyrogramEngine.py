@@ -5,7 +5,7 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 
-from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, app, app_session, BOT_PM, LEECH_LOG
+from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, app, app_session, BOT_PM, LEECH_LOG,CAP_DICT
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
@@ -85,18 +85,22 @@ class TgUploader:
             LEECH_DUMP = int(setstr)
             leechchat = LEECH_DUMP
         else: leechchat = self.__listener.message.chat.id
+        caption = CAP_DICT.get(self.__listener.message.chat.id, "")
+        CAPTION_X = caption
         if CUSTOM_FILENAME is not None:
             if "www" in file_ :
                 file__ = file_.split(maxsplit=1)[1]
             else:
                 file__ = file_
-            cap_mono = f"{CUSTOM_FILENAME} <b>{file__}</b>"
-            file_ = f"{CUSTOM_FILENAME} {file__}"
+            cap_mono = f"{CUSTOM_FILENAME} <b>{file__}</b>
+            file_ = f"{CUSTOM_FILENAME} {file__}"   
+            cap = f"\n\n{CAPTION_X}\n\n"
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
             up_path = new_path
         else:
             cap_mono = f"<b>{file_}</b>\n\n<b>𝗡𝗲𝘄 𝗨𝗽𝗱𝗮𝘁𝗲𝘀 𝗝𝗼𝗶𝗻 𝗡𝗼𝘄</b>\n👇👇👇👇👇👇👇👇\nhttps://telegram.me/+KgorOpsvehIyOTIx"
+            cap = f"\n\n{CAPTION_X}\n\n"
         notMedia = False
         thumb = self.__thumb
         self.__is_corrupted = False
@@ -123,7 +127,7 @@ class TgUploader:
                         osrename(up_path, new_path)
                         up_path = new_path
                     self.__sent_msg = client.send_video, parse_mode=ParseMode.HTML(chat_id=leechchat, video=up_path,
-                                                                  caption=cap_mono,
+                                                                  caption=cap_mono + cap,
                                                                   duration=duration,
                                                                   width=width,
                                                                   height=height,
