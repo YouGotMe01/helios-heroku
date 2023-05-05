@@ -30,6 +30,7 @@ class DbManger:
                  media boolean DEFAULT FALSE,
                  doc boolean DEFAULT FALSE,
                  thumb bytea DEFAULT NULL,
+                 dump text DEFAULT NULL,
                  leechlog boolean DEFAULT FALSE
               )
               """
@@ -63,12 +64,14 @@ class DbManger:
                 elif row[4]:
                     AS_DOC_USERS.add(row[0])
                 path = f"Thumbnails/{row[0]}.jpg"
-                if row[5] is not None and not ospath.exists(path):
+                if row[5]:
+                    CAP_DICT[row[0]] = row[5]
+                if row[6] is not None and not ospath.exists(path):
                     if not ospath.exists('Thumbnails'):
                         makedirs('Thumbnails')
                     with open(path, 'wb+') as f:
                         f.write(row[5])
-                if row[6] and row[0] not in LEECH_LOG:
+                if row[7] and row[0] not in LEECH_LOG:
                     LEECH_LOG.add(row[0])
             LOGGER.info("Users data has been imported from Database")
         # Rss Data
@@ -151,6 +154,18 @@ class DbManger:
         self.cur.execute(sql)
         self.conn.commit()
         self.disconnect()
+        
+    def user_cap(self, user_id: int, user_cap):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (cap, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET cap = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_cap, user_id))
+        self.conn.commit()
+        self.disconnect()  
+   
 
     def user_save_thumb(self, user_id: int, path):
         if self.err:
