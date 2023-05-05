@@ -147,6 +147,8 @@ NOTE: Try each command without any perfix to see more detalis.<br><br>
 <b>/{BotCommands.RssSubCommand}</b>: Subscribe new rss feed (Only Owner & Sudo).<br><br>
 <b>/{BotCommands.RssUnSubCommand}</b>: Unubscribe rss feed by title (Only Owner & Sudo).<br><br>
 <b>/{BotCommands.RssSettingsCommand}</b>[query]: Rss Settings (Only Owner & Sudo).<br><br>
+<b>/{BotCommands.CaptionCommand}</b>: Set Caption for leech files  (Only Owner & Sudo).<br><br>
+<br><br>
 '''
 help_string = f'''
 Hei, Need Help!!
