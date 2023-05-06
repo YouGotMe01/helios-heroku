@@ -12,7 +12,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage
 def scrape(update, context):
     
     if PAID_SERVICE is false:
-        if user_id_ in OWNER_ID:
+        if chat_id_ in OWNER_ID:
             message:Message = update.effective_message
             link = None
             if message.reply_to_message: link = message.reply_to_message.text
