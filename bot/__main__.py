@@ -112,6 +112,8 @@ NOTE: Try each command without any perfix to see more detalis.<br><br>
 <b>/{BotCommands.QbUnzipLeechCommand}</b>: Start leeching using qBittorrent and upload the file/folder extracted from any archive extension<br><br>
 <b>/{BotCommands.YtdlLeechCommand}</b>: Leech yt-dlp supported link.<br><br>
 <b>/{BotCommands.YtdlZipLeechCommand}</b>: Leech yt-dlp supported link as zip.<br><br>
+<b>/{BotCommands.CaptionCommand}</b>: Set Caption for leech files
+<br><br>
 <b>Other Commands:</b><br>
 <b>/{BotCommands.CloneCommand}</b> [drive_url]: Copy file/folder to Google Drive.<br><br>
 <b>/{BotCommands.CountCommand}</b> [drive_url]: Count file/folder of Google Drive.<br><br>
