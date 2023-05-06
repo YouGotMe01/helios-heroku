@@ -43,7 +43,7 @@ class _BotCommands:
         self.RmSudoCommand = f'rmsudo{CMD_INDEX}'
         self.PingCommand = f'ping{CMD_INDEX}'
         self.RestartCommand = f'restart{CMD_INDEX}'
-        self.CaptionCommand = f'caption{CMD_INDEX}')
+        self.CaptionCommand = f'caption{CMD_INDEX}'
         self.StatsCommand = f'stats{CMD_INDEX}'
         self.HelpCommand = f'help{CMD_INDEX}'
         self.LogCommand = f'log{CMD_INDEX}'
