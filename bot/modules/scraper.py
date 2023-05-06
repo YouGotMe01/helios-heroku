@@ -37,7 +37,7 @@ def scrape(update, context):
 #                 print(o)
                 sent = sendMessage(f"{o}", context.bot, update.message)
         else:
-            sendMessage(f"Buy Paid Service to use Feature.", context.bot, update.message)
+            sendMessage(context.bot, update.message)
     else:
         message:Message = update.effective_message
         link = None
