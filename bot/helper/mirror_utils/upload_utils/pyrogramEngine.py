@@ -99,7 +99,7 @@ class TgUploader:
             osrename(up_path, new_path)
             up_path = new_path
         else:
-            cap_mono = f"<b>{file_}</b>\n\n<b>𝗡𝗲𝘄 𝗨𝗽𝗱𝗮𝘁𝗲𝘀 𝗝𝗼𝗶𝗻 𝗡𝗼𝘄</b>\n👇👇👇👇👇👇👇👇\nhttps://telegram.me/+KgorOpsvehIyOTIx"
+            cap_mono = f"<b>{file__}</b>\n\n<b>𝗡𝗲𝘄 𝗨𝗽𝗱𝗮𝘁𝗲𝘀 𝗝𝗼𝗶𝗻 𝗡𝗼𝘄</b>\n👇👇👇👇👇👇👇👇\nhttps://telegram.me/+KgorOpsvehIyOTIx"
             cap = f"\n\n{CAPTION_X}\n\n"
         notMedia = False
         thumb = self.__thumb
@@ -126,7 +126,7 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                    self.__sent_msg = client.send_video, print cap_mono, parse_mode=ParseMode.HTML(chat_id=leechchat, video=up_path,
+                    self.__sent_msg = client.send_video, parse_mode=ParseMode.HTML(chat_id=leechchat, video=up_path,
                                                                   caption=cap_mono + cap,
                                                                   duration=duration,
                                                                   width=width,
