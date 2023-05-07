@@ -134,7 +134,7 @@ class TgUploader:
                                                                   thumb=thumb,
                                                                   supports_streaming=True,
                                                                   disable_notification=True,
-                                                                  progress=self.upload_progress
+                                                                  progress=self.upload_progress,
                                                                   parse_mode=ParseMode.HTML)
                     if not self.isPrivate and BOT_PM:
                         try:
