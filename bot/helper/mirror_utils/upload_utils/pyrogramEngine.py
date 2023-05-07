@@ -126,7 +126,7 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                    self.__sent_msg = client.send_video, parse_mode=ParseMode.HTML(chat_id=leechchat, video=up_path,
+                    self.__sent_msg = client.send_video, (chat_id=leechchat, video=up_path,
                                                                   print_caption=cap_mono,
                                                                   duration=duration,
                                                                   width=width,
@@ -134,7 +134,8 @@ class TgUploader:
                                                                   thumb=thumb,
                                                                   supports_streaming=True,
                                                                   disable_notification=True,
-                                                                  progress=self.__upload_progress)
+                                                                  progress=self.upload_progress
+                                                                  parse_mode=ParseMode.HTML)
                     if not self.isPrivate and BOT_PM:
                         try:
                             app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
