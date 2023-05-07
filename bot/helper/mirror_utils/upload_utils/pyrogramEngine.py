@@ -126,8 +126,8 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                    self.__sent_msg = client.send_video, (chat_id=leechchat, video=up_path,
-                                                                  print_caption=cap_mono,
+                    self.__sent_msg = client.send_video, parse_mode=caption(chat_id=leechchat, video=up_path,
+                                                                  caption=cap_mono,
                                                                   duration=duration,
                                                                   width=width,
                                                                   height=height,
