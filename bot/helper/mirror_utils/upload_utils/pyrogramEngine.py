@@ -85,8 +85,6 @@ class TgUploader:
             LEECH_DUMP = int(setstr)
             leechchat = LEECH_DUMP
         else: leechchat = self.__listener.message.chat.id
-        caption = CAP_DICT.get(self.__listener.message.chat.id, "")
-        CAPTION_X = caption
         if CUSTOM_FILENAME is not None:
             if "www" in file_ :
                 file__ = file_.split(maxsplit=1)[1]
