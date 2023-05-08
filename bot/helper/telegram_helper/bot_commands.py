@@ -61,6 +61,5 @@ class _BotCommands:
         self.RssUnSubCommand = getCommand('RSSUNSUB_CMD', f'rssunsub{CMD_INDEX}')
         self.RssSettingsCommand = getCommand('RSSSET_CMD', f'rssset{CMD_INDEX}')
         self.AddleechlogCommand = getCommand('ADDLEECHLOG_CMD', f'addleechlog{CMD_INDEX}')
-        self.RmleechlogCommand = getCommand('RMLEECHLOG_CMD', f'rmleechlog{CMD_INDEX}')
-        self.ScrapeCommand = getCommand('SCRAPE_COMMAND', f'scrape{CMD_INDEX}')
+        self.RmleechlogCommand = getCommand('RMLEECHLOG_CMD', f'rmleechlog{CMD_INDEX}') 
 BotCommands = _BotCommands()
