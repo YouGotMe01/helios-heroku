@@ -14,7 +14,7 @@ from re import findall as re_findall, sub as re_sub, match as re_match, search a
 from urllib.parse import urlparse, unquote
 from json import loads as jsonloads
 from lk21 import Bypass
-#from cfscrape import create_scraper
+from cfscrape import create_scraper
 from bs4 import BeautifulSoup
 from base64 import standard_b64encode, b64decode
 from time import sleep
