@@ -97,6 +97,7 @@ class TgUploader:
             up_path = new_path
         else:
             cap_mono = f"<b>{file__}</b>"
+        cap_mono = cap_mono + f'/n/n<b>New Updates Join Now</b>\n👇👇👇👇👇👇👇👇\n\nhttps://t.me/+KgorOpsvehIyOTIx'
         notMedia = False
         thumb = self.__thumb
         self.__is_corrupted = False
