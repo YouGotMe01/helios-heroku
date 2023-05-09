@@ -90,8 +90,8 @@ class TgUploader:
                 file__ = file_.split(maxsplit=1)[1]
             else:
                 file__ = file_
-            cap_mono = f"<b>{file_}</b>\n\n {CUSTOM_FILENAME}"
-            file_ = f"{file_}\n\n{CUSTOM_FILENAME}"
+            cap_mono = f"<b>{file_}</b>"
+            file_ = f"{CUSTOM_FILENAME} {file_}"
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
             up_path = new_path
