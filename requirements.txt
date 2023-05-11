@@ -2,7 +2,6 @@ anytree
 aria2p
 asyncio
 beautifulsoup4
-cfscrape
 cloudscraper
 feedparser
 flask
