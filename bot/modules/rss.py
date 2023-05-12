@@ -223,7 +223,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['links'][1]['href']
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
-                if RSS_COMMAND := [RSS_COMMAND]:
+                if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
                     lmno=scraper.get(hijk).text 
