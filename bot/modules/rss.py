@@ -230,12 +230,16 @@ def rss_monitor(context):
                     soup4=BeautifulSoup(lmno,'html.parser')
                     for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
                         url=pqrs.get('href')
-                        if url in magnets:
-                            break
-                        else: 
-                            magnets.append(url)
-                        feed_msg = f"/{RSS_COMMAND} {url}"
-                        sendRss(feed_msg, context.bot)
+                    rss_feed_url = "url"
+                    feed = feedparser.parse(rss_feed_url)
+                    processed_entries = set()
+                    for entry in feed.entries:
+                        entry_id = entry.id  # Use the appropriate unique identifier for your RSS feed
+                        if entry_id in processed_entries:
+                            continue  # Skip duplicate entry
+                        processed_entries.add(entry_id)
+                    feed_msg = f"/{RSS_COMMAND} {url}"
+                    sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
