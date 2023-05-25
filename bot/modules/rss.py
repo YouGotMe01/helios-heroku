@@ -1,6 +1,7 @@
 import re
 import cloudscraper 
 from bs4 import BeautifulSoup
+import feedparser
 from feedparser import parse as feedparse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
