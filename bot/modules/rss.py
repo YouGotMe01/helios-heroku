@@ -235,14 +235,6 @@ def rss_monitor(context):
                             break
                         else: 
                             magnets.append(url)
-                    rss_feed_url = "url"
-                    feed = feedparser.parse(rss_feed_url)
-                    processed_entries = set()
-                    for entry in feed.entries:
-                        entry_id = entry.id  # Use the appropriate unique identifier for your RSS feed
-                        if entry_id in processed_entries:
-                            continue  # Skip duplicate entry
-                        processed_entries.add(entry_id)
                     feed_msg = f"/{RSS_COMMAND} {url}"
                     sendRss(feed_msg, context.bot)
                 else:
