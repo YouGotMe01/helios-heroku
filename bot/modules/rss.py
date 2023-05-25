@@ -230,6 +230,10 @@ def rss_monitor(context):
                     soup4=BeautifulSoup(lmno,'html.parser')
                     for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
                         url=pqrs.get('href')
+                        if url in magnets:
+                            break
+                        else: 
+                            magnets.append(url)
                     rss_feed_url = "url"
                     feed = feedparser.parse(rss_feed_url)
                     processed_entries = set()
