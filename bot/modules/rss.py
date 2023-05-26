@@ -244,13 +244,13 @@ def rss_monitor(context):
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
                     lmno=scraper.get(hijk).text 
                     soup4=BeautifulSoup(lmno,'html.parser')
-                    magnets = []
-                    for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
+                    torrents = []
+                    for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^torrend")}): 
                         url=pqrs.get('href')
-                        if url in magnets:
+                        if url in torrent:
                             break
                         else: 
-                            magnets.append(url)
+                            torrent.append(url)
                         feed_msg = f"/{RSS_COMMAND} {url}"
                         sendRss(feed_msg, context.bot)
                 else:
