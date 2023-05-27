@@ -1,7 +1,6 @@
 import re
 import cloudscraper 
 from bs4 import BeautifulSoup
-import feedparser
 from feedparser import parse as feedparse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -15,23 +14,6 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
-torrents = []
-seen_feeds_file = 'seen_feeds.txt'
-unique_feeds = set()
-try:
-    with open(seen_feeds_file, 'r') as f:
-        unique_feeds.update(line.strip() for line in f)
-except FileNotFoundError:
-    pass
-rss_url = "url"
-feed = feedparser.parse(rss_url)
-if rss_url not in unique_feeds:
-    print(f"New Feed: {rss_url}")
-    unique_feeds.add(rss_url)
-    with open(seen_feeds_file, 'a') as f:
-        print(rss_url, file=f) 
-else:
-    print(f"Feed already processed: {rss_url}")
 
 def rss_list(update, context):
     if len(rss_dict) > 0:
