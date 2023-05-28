@@ -1,11 +1,9 @@
 anytree
 aria2p
-APScheduler
 asyncio
 beautifulsoup4
 cfscrape
 cloudscraper
-feedparser
 flask
 google-api-python-client
 google-auth-httplib2
