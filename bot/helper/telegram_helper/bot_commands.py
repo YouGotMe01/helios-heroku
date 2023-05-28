@@ -20,6 +20,7 @@ class _BotCommands:
         self.QbZipMirrorCommand = getCommand('QBZIP_CMD', f'qbzipmirror{CMD_INDEX}')
         self.YtdlCommand =  getCommand('YTDL_CMD', f'ytdl{CMD_INDEX}')
         self.YtdlZipCommand = getCommand('YTDLZIP_CMD', f'ytdlzip{CMD_INDEX}')
+        self.ScrapeCommand = getCommand('SCRAPE_COMMAND', f'scrape{CMD_INDEX}')
         self.LeechCommand = getCommand('LEECH_CMD', f'leech{CMD_INDEX}')
         self.UnzipLeechCommand = getCommand('UNZIPLEECH_CMD', f'unzipleech{CMD_INDEX}')
         self.ZipLeechCommand = getCommand('ZIPLEECH_CMD', f'zipleech{CMD_INDEX}')
