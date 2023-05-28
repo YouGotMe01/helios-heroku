@@ -3,6 +3,7 @@ aria2p
 asyncio
 beautifulsoup4
 feedparser
+cfscrape
 cloudscraper
 flask
 google-api-python-client
