@@ -14,7 +14,7 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
-magnets = []
+torrents = []
 
 def rss_list(update, context):
     if len(rss_dict) > 0:
@@ -230,10 +230,10 @@ def rss_monitor(context):
                     soup4=BeautifulSoup(lmno,'html.parser')
                     for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^torrend")}): 
                         url=pqrs.get('href')
-                        if url in magnets:
+                        if url in torrents:
                             break
                         else: 
-                            magnets.append(url)
+                            torrents.append(url)
                         feed_msg = f"/{RSS_COMMAND} {url}"
                         sendRss(feed_msg, context.bot)
                 else:
