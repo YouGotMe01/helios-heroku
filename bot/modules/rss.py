@@ -229,10 +229,10 @@ def rss_monitor(context):
                     soup4=BeautifulSoup(lmno,'html.parser')
                     for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
                         url=pqrs.get('href')
-                        if url in magnets:
+                        if url in magnet:
                             break
                         else: 
-                            magnets.append(url)
+                            magnet.append(url)
                         feed_msg = f"/{RSS_COMMAND} {url}"
                         sendRss(feed_msg, context.bot)
                 else:
