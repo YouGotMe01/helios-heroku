@@ -224,11 +224,11 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    hijk = url
+                    hijk = torrent_url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
                     lmno=scraper.get(hijk).text 
                     soup4=BeautifulSoup(lmno,'html.parser')
-                    for pqrs in soup4.find_all('a',attrs={'href':re.compile(r'.torrend')}): 
+                    for pqrs in soup4.find_all('a',attrs={'href':re.compile(r'torrend')}): 
                         url=pqrs.get('href')
                         if url in torrents:
                             break
