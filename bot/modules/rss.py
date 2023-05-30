@@ -227,7 +227,7 @@ def rss_monitor(context):
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
                     lmno=scraper.get(hijk).text
-                    soup4=BeautifulSoup(lmno'html.parser')
+                    soup4=BeautifulSoup(lmno,'html.parser')
                     for pqrs in soup4.find_all('a',attrs={'href':re.compile(r'\.torrend')}): 
                         url=pqrs.get('href')
                         if url in torrents:
