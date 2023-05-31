@@ -224,17 +224,17 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    hijk = url
+                    hijk = torrent_links
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
                     lmno=scraper.get(hijk).text
                     soup4=BeautifulSoup(lmno,'html.parser')
                     for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^/download-")}): 
-                        url=pqrs.get('href')
-                        if url in torrents:
+                        torrent_links=pqrs.get('href')
+                        if torrent_links in torrents:
                             break
                         else: 
-                            torrents.append(url)
-                        feed_msg = f"/{RSS_COMMAND} {url}"
+                            torrents.append(torrent_links)
+                        feed_msg = f"/{RSS_COMMAND} {torrent_links}"
                         sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
