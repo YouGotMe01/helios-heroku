@@ -14,7 +14,7 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
-torrents = []
+torrent_links = []
 
 def rss_list(update, context):
     if len(rss_dict) > 0:
