@@ -1,5 +1,6 @@
 import re
 import cloudscraper 
+import torrentool
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
 from time import sleep
@@ -14,7 +15,6 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
-torrent_links = []
 
 def rss_list(update, context):
     if len(rss_dict) > 0:
@@ -226,16 +226,16 @@ def rss_monitor(context):
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
-                    lmno=scraper.get(hijk).text
-                    soup4=BeautifulSoup(lmno,'html.parser')
-                    for pqrs in soup4.find_all('a',attrs={'href':re.compile(r'.torrent')}): 
-                        url=pqrs.get('href')
-                        if url in torrent_links:
-                            break
-                        else: 
-                            torrent_links.append(url)
-                        feed_msg = f"/{RSS_COMMAND} {url}"
-                        sendRss(feed_msg, context.bot)
+                    response=scraper.get(hijk)
+                    torrent_data = response.content
+                    torrent_file = torrentool.Torrent(data=torrent_data)
+                    torrent_file_path = "output.torrent"
+                    with open(torrent_file_path, "wb") as file:
+                       file.write(torrent_data)
+                    
+                    print("Torrent file saved as:", torrent_file_path)
+                    feed_msg = f"/{RSS_COMMAND} {url}"
+                    sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
