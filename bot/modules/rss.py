@@ -226,7 +226,7 @@ def rss_monitor(context):
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper()
-                    response=scraper.get(hijk)
+                    response=scraper.get(hijk).text
                     torrent_data = response.content
                     torrent_file = torrentool.torrent(data=torrent_data)
                     torrent_file_path = "output.torrent"
