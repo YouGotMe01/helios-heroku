@@ -1,6 +1,5 @@
 import re
 import cloudscraper 
-import torrenttool
 from torrentool import torrent
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
@@ -226,7 +225,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
                     hijk = url
-                    scraper = cloudscraper.create_scraper(allow_brotli=False)
+                    scraper = cloudscraper.create_scraper()
                     response=scraper.get(hijk)
                     torrent_data = response.content
                     torrent_file = torrentool.torrent(data=torrent_data)
