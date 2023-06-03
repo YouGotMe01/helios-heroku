@@ -227,8 +227,9 @@ def rss_monitor(context):
                     hijk = url
                     scraper = cloudscraper.create_scraper()
                     response=scraper.get(hijk).text
-                    torrent_data = feedparser(response.content,'html.parsar')
+                    soub = BeautifulSoup(response.content,'html.parsar')
                     torrent_file = torrentool.torrent(data=torrent_data)
+                       for pqrs in soup4.find_all('a',attrs={'href':re.compile(r'.torrent')}): 
                     torrent_file_path = "output.torrent"
                     with open(torrent_file_path, "wb") as file:
                        file.write(torrent_data)
