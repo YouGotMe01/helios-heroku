@@ -227,7 +227,7 @@ def rss_monitor(context):
                     hijk = url
                     scraper = cloudscraper.create_scraper()
                     response=scraper.get(hijk).text
-                    torrent_data = response.content
+                    torrent_data = response.content,('html.parsar')
                     torrent_file = torrentool.torrent(data=torrent_data)
                     torrent_file_path = "output.torrent"
                     with open(torrent_file_path, "wb") as file:
