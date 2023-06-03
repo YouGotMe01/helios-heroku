@@ -228,7 +228,7 @@ def rss_monitor(context):
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
                     response=scraper.get(hijk)
                     torrent_data = response.content
-                    torrent_file = torrentool.'Torrent'(data=torrent_data)
+                    torrent_file = torrentool.('Torrent')(data=torrent_data)
                     torrent_file_path = "output.torrent"
                     with open(torrent_file_path, "wb") as file:
                        file.write(torrent_data)
