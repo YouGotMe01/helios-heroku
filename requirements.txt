@@ -27,6 +27,7 @@ requests
 SecretStorage
 telegraph
 torrentool
+torrend
 tenacity
 tgCrypto
 xattr
