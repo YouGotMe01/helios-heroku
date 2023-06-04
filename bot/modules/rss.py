@@ -226,7 +226,7 @@ def rss_monitor(context):
                 if RSS_COMMAND is not None:
                     rss_url = url
                     feed = feedparser.parse(rss_url)
-                    for entry in feed.entires:
+                    for entry in feed.entries:
                         title = entry.title
                         download_link = entry.link
                         torrent_name = f'{title}.torrent'
