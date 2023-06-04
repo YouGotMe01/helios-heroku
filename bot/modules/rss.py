@@ -1,6 +1,7 @@
 import re
 import cloudscraper 
-import torrentool  
+import torrendtool
+from torrentool import Torrent  
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
 from time import sleep
@@ -229,7 +230,7 @@ def rss_monitor(context):
                     response=scraper.get(hijk)
                     if response.status_code == 200:
                         torrend_data = BeautifulSoup(response.content,'html.parser')
-                        torrent_file = torrentool.Torrent(data=torrent_data)
+                        torrent_file = Torrent(data=torrent_data)
                         torrent_file_path = "output.torrent"
                         with open(torrent_file_path, "wb") as file:
                             file.write(torrent_data.raw)
