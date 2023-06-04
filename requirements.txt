@@ -21,6 +21,7 @@ pycryptodomex
 pyrogram==2.0.66
 python-dotenv
 python-magic
+py3createtorrent
 python-telegram-bot==13.15
 qbittorrent-api
 requests
