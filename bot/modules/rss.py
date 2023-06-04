@@ -1,5 +1,5 @@
 import os
-import py3createtor
+import py3createtorrent
 import feedparser
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
