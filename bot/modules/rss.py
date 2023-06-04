@@ -226,16 +226,18 @@ def rss_monitor(context):
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper()
-                    response=scraper.get(hijk).text
-                    torrend_data = BeautifulSoup(response.content,'html.parsar')
-                    torrent_file = torrentool.Torrent(data=torrent_data)
-                    torrent_file_path = "output.torrent"
-                    with open(torrent_file_path, "wb") as file:
-                       file.write(torrent_data.bencode())
-                    
-                    print("Torrent file saved as:", torrent_file_path)
-                    feed_msg = f"/{RSS_COMMAND} {url}"
-                    sendRss(feed_msg, context.bot)
+                    response=scraper.get(hijk)
+                    if response.status_code == 200:
+                        torrend_data = BeautifulSoup(response.content,'html.parsar')
+                        torrent_file = torrentool.Torrent(data=torrent_data)
+                        torrent_file_path = "output.torrent"
+                        with open(torrent_file_path, "wb") as file:
+                            file.write(torrent_data.raw)
+                        print("Torrent file saved as:", torrent_file_path)
+                    else:
+                        print("Error: Could not retrieve content from", hijk)
+                        feed_msg = f"/{RSS_COMMAND} {url}"
+                        sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
