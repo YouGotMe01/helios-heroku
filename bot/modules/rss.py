@@ -1,6 +1,5 @@
 import re
 import cloudscraper 
-import torrenttool
 from torrentool import Torrent  
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
