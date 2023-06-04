@@ -228,10 +228,10 @@ def rss_monitor(context):
                     scraper = cloudscraper.create_scraper()
                     response=scraper.get(hijk).text
                     torrend_data = BeautifulSoup(response.content,'html.parsar')
-                    torrent_file = torrentool.torrent(data=torrent_data)
+                    torrent_file = torrentool.Torrent(data=torrent_data)
                     torrent_file_path = "output.torrent"
                     with open(torrent_file_path, "wb") as file:
-                       file.write(torrent_data)
+                       file.write(torrent_data.bencode())
                     
                     print("Torrent file saved as:", torrent_file_path)
                     feed_msg = f"/{RSS_COMMAND} {url}"
