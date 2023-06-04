@@ -13,6 +13,7 @@ gunicorn
 lk21
 lxml
 megasdkrestclient
+pytorrent
 pillow
 psutil
 psycopg2-binary
