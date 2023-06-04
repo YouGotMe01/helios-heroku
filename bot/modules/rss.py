@@ -1,6 +1,6 @@
-import re
-import cloudscraper 
-from torrentool import Torrent
+import os
+import cloudscraper
+import py3createtorrent
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
 from time import sleep
@@ -224,18 +224,13 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    hijk = url
-                    scraper = cloudscraper.create_scraper()
-                    response=scraper.get(hijk)
-                    if response.status_code == 200:
-                        torrend_data = BeautifulSoup(response.content,'html.parser')
-                        torrent_file = Torrent(data=torrent_data)
-                        torrent_file_path = "output.torrent"
-                        with open(torrent_file_path, "wb") as file:
-                            file.write(torrent_data.raw)
-                        print("Torrent file saved as:", torrent_file_path)
-                    else:
-                        print("Error: Could not retrieve content from", hijk)
+                    rss_url = url
+                    feed = feedparser.parse(rss_url)
+                    for entry in feed.entires:
+                        title = entry.title
+                        download_link = entry.link
+                        torrent_name = f'{title}.torrent'
+                        py3createtorrent.create_torrent(download_link, torrent_name)
                         feed_msg = f"/{RSS_COMMAND} {url}"
                         sendRss(feed_msg, context.bot)
                 else:
