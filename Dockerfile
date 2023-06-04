@@ -1,4 +1,4 @@
-FROM codewithweeb/weebzone:stable
+FROM dawn001/z_mirror:heroku
 
 WORKDIR /usr/src/app
 RUN chmod 777 /usr/src/app
