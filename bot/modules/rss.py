@@ -1,8 +1,6 @@
 import os
-import cloudscraper
-import py3createtorrent
-from bs4 import BeautifulSoup
-from feedparser import parse as feedparse
+import py3createtor
+import feedparser
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from threading import Lock, Thread
