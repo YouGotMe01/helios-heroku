@@ -228,7 +228,7 @@ def rss_monitor(context):
                     scraper = cloudscraper.create_scraper()
                     response=scraper.get(hijk)
                     if response.status_code == 200:
-                        torrend_data = BeautifulSoup(response.content,'html.parsar')
+                        torrend_data = BeautifulSoup(response.content,'html.parser')
                         torrent_file = torrentool.Torrent(data=torrent_data)
                         torrent_file_path = "output.torrent"
                         with open(torrent_file_path, "wb") as file:
