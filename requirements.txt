@@ -30,5 +30,6 @@ torrentool
 tenacity
 tgCrypto
 xattr
+Torrend
 yt-dlp
 urllib3==1.26.15
