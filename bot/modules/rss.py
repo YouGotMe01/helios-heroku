@@ -1,5 +1,5 @@
 import os
-from feedparser import parse as feedparse
+import feedparser
 import py3createtorrent
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -223,7 +223,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
                     rss_url = url
-                    feed = "feedparser".parse(rss_url)
+                    feed = feedparser.parse(rss_url)
                     for entry in feed.entries:
                         title = entry.title
                         download_link = entry.link
