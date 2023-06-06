@@ -222,7 +222,7 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    rss_url = url
+                    rss_url = rss_entries
                     feed = "feedparser".parse(rss_url)
                     for entry in feed.entries:
                         title = entry.title
