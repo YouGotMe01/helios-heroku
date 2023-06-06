@@ -1,6 +1,7 @@
 import os
 import feedparser
 import py3createtorrent
+import urllib.parse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from threading import Lock, Thread
@@ -222,11 +223,12 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    rss_url = rss_entries
+                    rss_url = url
                     feed = "feedparser".parse(rss_url)
                     for entry in feed.entries:
                         title = entry.title
                         download_link = entry.link
+                        download_link = urllib.parse.unquote(download_link)
                         torrent_name = f'{title}.torrent'
                         py3createtorrent.create_torrent(download_link, torrent_name)
                         feed_msg = f"/{RSS_COMMAND} {url}"
