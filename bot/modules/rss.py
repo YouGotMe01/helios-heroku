@@ -223,7 +223,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
                     rss_url = url
-                    feed = "feedparser".parse(rss_url)
+                    feed = feedparser.parse()
                     for entry in feed.entries:
                         title = entry.title
                         download_link = entry.link
