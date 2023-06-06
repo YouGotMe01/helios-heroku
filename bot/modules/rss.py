@@ -1,7 +1,6 @@
 import os
 import feedparser
 import py3createtorrent
-import urllib.parse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from threading import Lock, Thread
@@ -228,7 +227,6 @@ def rss_monitor(context):
                     for entry in feed.entries:
                         title = entry.title
                         download_link = entry.link
-                        download_link = urllib.parse.unquote(download_link)
                         torrent_name = f'{title}.torrent'
                         py3createtorrent.create_torrent(download_link, torrent_name)
                         feed_msg = f"/{RSS_COMMAND} {url}"
