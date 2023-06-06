@@ -231,7 +231,7 @@ def rss_monitor(context):
                         torrent_name = f'{title}.torrent'
                         torrent_path = os.path.join(torrent_dir, torrent_name)
                         py3createtorrent.create_torrent(download_link, torrent_path)
-                        feed_msg = f"/{RSS_COMMAND} {rss_url}"
+                        feed_msg = f"/{RSS_COMMAND} {url}"
                         sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
