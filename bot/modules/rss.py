@@ -222,14 +222,16 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
+                    torrent_dir = '/path/to/torrent/directory/'
                     rss_url = url
                     feed = feedparser.parse(rss_url)
                     for entry in feed.entries:
                         title = entry.title
                         download_link = entry.link
                         torrent_name = f'{title}.torrent'
-                        py3createtorrent.create_torrent(download_link, torrent_name)
-                        feed_msg = f"/{RSS_COMMAND} {url}"
+                        torrent_path = os.path.join(torrent_dir, torrent_name)
+                        py3createtorrent.create_torrent(download_link, torrent_path)
+                        feed_msg = f"/{RSS_COMMAND} {rss_url}"
                         sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
