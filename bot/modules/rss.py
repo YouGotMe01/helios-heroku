@@ -237,20 +237,20 @@ def rss_monitor(context):
                                 os.remove(torrent_name)    
                         context.bot.send_message(update.effective_chat.id, "Torrent files generated and sent successfully!")
 
-                   def start(update, context):
-                       update.message.reply_text('Welcome to the Torrent Generator Bot! Send me the RSS feed URL.')
+                    def start(update, context):
+                        update.message.reply_text('Welcome to the Torrent Generator Bot! Send me the RSS feed URL.')
 
-                   def main():
-                       updater = Updater(TOKEN, use_context=True)
-                       dp = updater.dispatcher
-                       dp.add_handler(CommandHandler("start", start))
-                       dp.add_handler(CommandHandler("rss_to_torrent", rss_to_torrent))
+                    def main():
+                        updater = Updater(TOKEN, use_context=True)
+                        dp = updater.dispatcher
+                        dp.add_handler(CommandHandler("start", start))
+                        dp.add_handler(CommandHandler("rss_to_torrent", rss_to_torrent))
 
-                       updater.start_polling()
-                       updater.idle()
+                        updater.start_polling()
+                        updater.idle()
 
-                   if __name__ == '__main__':
-                       main()
+                    if __name__ == '__main__':
+                        main()
 
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
