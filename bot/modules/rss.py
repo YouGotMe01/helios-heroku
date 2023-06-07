@@ -1,8 +1,9 @@
 import os
 import feedparser
+import telegram
 import py3createtorrent
 from time import sleep
-from telegram.ext import CommandHandler, CallbackQueryHandler
+from telegram.ext import CommandHandler, CallbackQueryHandler,Updater
 from threading import Lock, Thread
 
 from bot import dispatcher, job_queue, rss_dict, LOGGER, DB_URI, RSS_DELAY, RSS_CHAT_ID, RSS_COMMAND, AUTO_DELETE_MESSAGE_DURATION
@@ -222,6 +223,8 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
+                    TOKEN = 'Bot_token'
+                    def generate_torrent_from_magnet(magnet_link, output_file):
                     def rss_to_torrent(update, context):
                         rss_url = context.args[0]
                         feed = feedparser.parse(rss_url)
@@ -229,11 +232,26 @@ def rss_monitor(context):
                             title = entry.title
                             download_link = entry.link
                             torrent_name = f'{title}.torrent'
-                            py3createtorrent.create_torrent(download_link, torrent_name)
+                            generate_torrent_from_magnet(download_link, torrent_name)        
                             with open(torrent_name, 'rb') as torrent_file:
-                                context.bot.send_document(update.effective_chat.id, document=torrent_file)
-                            os.remove(torrent_name)
+                                context.bot.send_document(update.effective_chat.id, document=torrent_file)        
+                                os.remove(torrent_name)    
                         context.bot.send_message(update.effective_chat.id, "Torrent files generated and sent successfully!")
+
+                   def start(update, context):
+                       update.message.reply_text('Welcome to the Torrent Generator Bot! Send me the RSS feed URL.')
+
+                   def main():
+                       updater = Updater(TOKEN, use_context=True)
+                       dp = updater.dispatcher
+                       dp.add_handler(CommandHandler("start", start))
+                       dp.add_handler(CommandHandler("rss_to_torrent", rss_to_torrent))
+
+                       updater.start_polling()
+                       updater.idle()
+
+                   if __name__ == '__main__':
+                       main()
 
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
