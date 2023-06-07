@@ -3,6 +3,7 @@ import feedparser
 import py3createtorrent
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
+from telegram import Bot
 from threading import Lock, Thread
 
 from bot import dispatcher, job_queue, rss_dict, LOGGER, DB_URI, RSS_DELAY, RSS_CHAT_ID, RSS_COMMAND, AUTO_DELETE_MESSAGE_DURATION
@@ -222,18 +223,21 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    rss_url = url
-                    feed = feedparser.parse(rss_url)
-                    for entry in feed.entries:
-                        title = entry.title
-                        download_link = entry.link
-                        torrent_name = f'{title}.torrent'
-                        py3createtorrent.create_torrent(download_link, torrent_name)
+                    bot = Bot(token=TOKEN)
+                    bot.start_polling()
+                    def rss_to_torrent(update, context):
+                        rss_url = context.args[0]
+                        feed = feedparser.parse(rss_url)
+                        for entry in feed.entries:
+                            title = entry.title
+                            download_link = entry.link
+                            torrent_name = f'{title}.torrent'
+                            py3createtorrent.create_torrent(download_link, torrent_name)
                         
-                        with open(torrent_name, 'rb') as torrent_file:
-                            context.bot.send_document(update.effective_owner.id, document=torrent_file)
-                        os.remove(torrent_name)
-                    context.bot.send_message(update.effective_owner.id, "Torrent files generated and sent successfully!")
+                            with open(torrent_name, 'rb') as torrent_file:
+                                context.bot.send_document(update.effective_owner.id, document=torrent_file)
+                            os.remove(torrent_name)
+                        context.bot.send_message(update.effective_owner.id, "Torrent files generated and sent successfully!")
 
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
@@ -256,7 +260,9 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_unsub_handler = CommandHandler(BotCommands.RssUnSubCommand, rss_unsub, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_settings_handler = CommandHandler(BotCommands.RssSettingsCommand, rss_settings, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_buttons_handler = CallbackQueryHandler(rss_set_update, pattern="rss", run_async=True)
-
+    rss_to_torrent_handler = CommandHandler('rss_to_torrent', rss_to_torrent)
+    
+    dispatcher.add_handler(rss_to_torrent_handler)
     dispatcher.add_handler(rss_list_handler)
     dispatcher.add_handler(rss_get_handler)
     dispatcher.add_handler(rss_sub_handler)
