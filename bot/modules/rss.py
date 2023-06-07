@@ -224,7 +224,6 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
                     TOKEN = 'Bot_token'
-                    def generate_torrent_from_magnet(magnet_link, output_file):
                     def rss_to_torrent(update, context):
                         rss_url = context.args[0]
                         feed = feedparser.parse(rss_url)
