@@ -27,6 +27,7 @@ qbittorrent-api
 requests
 SecretStorage
 telegraph
+telegram
 tenacity
 tgCrypto
 xattr
