@@ -224,7 +224,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
                     bot = Bot(token=TOKEN)
-                    bot.start_polling()
+                    
                     def rss_to_torrent(update, context):
                         rss_url = context.args[0]
                         feed = feedparser.parse(rss_url)
@@ -261,6 +261,7 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_settings_handler = CommandHandler(BotCommands.RssSettingsCommand, rss_settings, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_buttons_handler = CallbackQueryHandler(rss_set_update, pattern="rss", run_async=True)
     rss_to_torrent_handler = CommandHandler('rss_to_torrent', rss_to_torrent)
+    bot.start_polling()
     
     dispatcher.add_handler(rss_to_torrent_handler)
     dispatcher.add_handler(rss_list_handler)
