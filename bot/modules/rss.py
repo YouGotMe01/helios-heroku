@@ -232,9 +232,9 @@ def rss_monitor(context):
                             py3createtorrent.create_torrent(download_link, torrent_name)
                         
                             with open(torrent_name, 'rb') as torrent_file:
-                                context.bot.send_document(update.effective_owner.id, document=torrent_file)
+                                context.bot.send_document(update.effective_chat.id, document=torrent_file)
                             os.remove(torrent_name)
-                        context.bot.send_message(update.effective_owner.id, "Torrent files generated and sent successfully!")
+                        context.bot.send_message(update.effective_chat.id, "Torrent files generated and sent successfully!")
 
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
