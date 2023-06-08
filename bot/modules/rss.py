@@ -230,7 +230,8 @@ def rss_monitor(context):
                             download_link = entry.link
                             torrent_name = f'{title}.torrent'
                             generate_torrent_file(download_link, torrent_name)
-                            feed_msg = f"{RSS_COMMAND} {context}"open(torrent_name, 'rb') as file:
+                            feed_msg = f"{RSS_COMMAND} {context}"
+                            with open(torrent_name, 'rb') as file:
                                 context.bot.send_document(document=file)                                    
                                 os.remove(torrent_name)  
                             SentRss(feed_meg, context.bot.send_message (text="Torrent files generated and sent successfully!"))
