@@ -233,7 +233,7 @@ def rss_monitor(context):
                             with open(torrent_name, 'rb') as file:
                                 context.bot.send_document(chat_id=update.effective_chat.id, document=file)                                   
                                 os.remove(torrent_name)  
-                            SentRss(feed_meg, context.bot.send_message(chat_id=update.effective_chat.id, text="Torrent files generated and sent successfully!")
+                            SentRss(feed_meg, context.bot.send_message(chat_id=update.effective_chat.id, text="Torrent files generated and sent successfully!"))
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
