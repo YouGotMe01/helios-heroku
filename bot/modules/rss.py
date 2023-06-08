@@ -222,19 +222,20 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                     rss_to_torrent(update, context):
-                    rss_url = context.args[0]
-                    feed = feedparser.parse(rss_url)
-                    for entry in feed.entries:
-                        title = entry.title
-                        download_link = entry.link
-                        torrent_name = f'{title}.torrent'
-                        generate_torrent_file(download_link, torrent_name)
-                        feed_msg = f"{RSS_COMMAND} {context}"
-                        with open(torrent_name, 'rb') as file:
-                            context.bot.send_document(document=file)                                    
-                            os.remove(torrent_name)  
-                        SentRss(feed_meg, context.bot.send_message)
+                    def rss_to_torrent(update, context):
+                        if condition:
+                            rss_url = context.args[0]
+                            feed = feedparser.parse(rss_url)
+                            for entry in feed.entries:
+                                title = entry.title
+                                download_link = entry.link
+                                torrent_name = f'{title}.torrent'
+                                generate_torrent_file(download_link, torrent_name)
+                                feed_msg = f"{RSS_COMMAND} {context}"
+                                with open(torrent_name, 'rb') as file:
+                                    context.bot.send_document(document=file)                                    
+                                    os.remove(torrent_name)  
+                                SentRss(feed_meg, context.bot.send_message)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
