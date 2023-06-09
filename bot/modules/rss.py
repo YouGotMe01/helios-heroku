@@ -238,7 +238,7 @@ def rss_monitor(context):
                             torrent_data = bencodepy.encode(torrent)
                             with open('feed.torrent', 'wb') as torrent_file:
                                 torrent_file.write(torrent_data)
-                                feed_msg = f"/{RSS_COMMAND} {feed_url}"
+                            feed_msg = f"/{RSS_COMMAND} {feed_url}"
                             SentRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
