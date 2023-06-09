@@ -222,35 +222,35 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                     
-             feed_count = 0  
-             for url in urls:      
-                rss_d = feedparser.parse(url)  
-                if RSS_COMMAND is not None:
-                    feed_url = url
-                    def generate_torrent_file(feed_url):
-                        feed = feedparser.parse(feed_url)
-                        torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
-                        for entry in feed.entries:
-                            title = entry.title
-                            link = entry.link
-                            file_dict = {'path': [title], 'length': 0}
-                            torrent['info']['files'].append(file_dict)
-                            link_hash = hashlib.sha1(link.encode()).digest()
-                            torrent['info']['pieces'] += link_hash
-                            total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
-                            torrent['info']['length'] = total_size
-                            torrent_data = bencodepy.encode(torrent)
-                            with open('feed.torrent', 'wb') as torrent_file:
-                                torrent_file.write(torrent_data)
-                            feed_msg = f"/{RSS_COMMAND} {feed_url}"
-                            SentRss(feed_msg, context.bot)
-                    generate_torrent_file(feed_url)       
-                else:
-                    feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"
-                    SentRss(feed_msg, context.bot)
-                feed_count += 1
-                sleep(5)
+                feed_count = 0  
+                for url in urls:      
+                    rss_d = feedparser.parse(url)  
+                    if RSS_COMMAND is not None:
+                        feed_url = url
+                        def generate_torrent_file(feed_url):
+                            feed = feedparser.parse(feed_url)
+                            torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
+                            for entry in feed.entries:
+                                title = entry.title
+                                link = entry.link
+                                file_dict = {'path': [title], 'length': 0}
+                                torrent['info']['files'].append(file_dict)
+                                link_hash = hashlib.sha1(link.encode()).digest()
+                                torrent['info']['pieces'] += link_hash
+                                total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
+                                torrent['info']['length'] = total_size
+                                torrent_data = bencodepy.encode(torrent)
+                                with open('feed.torrent', 'wb') as torrent_file:
+                                    torrent_file.write(torrent_data)
+                                feed_msg = f"/{RSS_COMMAND} {feed_url}"
+                                SentRss(feed_msg, context.bot)
+                        generate_torrent_file(feed_url)       
+                    else:
+                        feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
+                        feed_msg += f"<b>Link: </b><code>{url}</code>"
+                        SentRss(feed_msg, context.bot)
+                    feed_count += 1
+                    sleep(5)
             DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
