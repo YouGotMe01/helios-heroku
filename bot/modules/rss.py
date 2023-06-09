@@ -1,6 +1,6 @@
 import feedparser
 import hashlib
-import bencodepy
+import bencode
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler,Updater
 from threading import Lock, Thread
