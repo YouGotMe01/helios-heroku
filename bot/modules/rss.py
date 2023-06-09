@@ -221,6 +221,10 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['links'][1]['href']
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
+                    
+             feed_count = 0  
+             for url in urls:      
+                rss_d = feedparser.parse(url)  
                 if RSS_COMMAND is not None:
                     feed_url = url
                     def generate_torrent_file(feed_url):
@@ -240,9 +244,11 @@ def rss_monitor(context):
                                 torrent_file.write(torrent_data)
                             feed_msg = f"/{RSS_COMMAND} {feed_url}"
                             SentRss(feed_msg, context.bot)
+                    generate_torrent_file(feed_url)       
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
+                    SentRss(feed_msg, context.bot)
                 feed_count += 1
                 sleep(5)
             DbManger().rss_update(name, str(last_link), str(last_title))
