@@ -1,6 +1,6 @@
-import os
 import feedparser
-import py3createtorrent
+import hashlib
+import bencodepy
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler,Updater
 from threading import Lock, Thread
@@ -222,20 +222,24 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    def rss_to_torrent(update, context):
-                        if condition:
-                            rss_url = context.args[0]
-                            feed = feedparser.parse(rss_url)
-                            for entry in feed.entries:
-                                title = entry.title
-                                download_link = entry.link
-                                torrent_name = f'{title}.torrent'
-                                generate_torrent_file(download_link, torrent_name)
-                                feed_msg = f"{RSS_COMMAND} {context}"
-                                with open(torrent_name, 'rb') as file:
-                                    context.bot.send_document(document=file)                                    
-                                    os.remove(torrent_name)  
-                                SentRss(feed_meg, context.bot.send_message)
+                    feed_url = url
+                    def generate_torrent_file(feed_url):
+                        feed = feedparser.parse(feed_url)
+                        torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
+                        for entry in feed.entries:
+                            title = entry.title
+                            link = entry.link
+                            file_dict = {'path': [title], 'length': 0}
+                            torrent['info']['files'].append(file_dict)
+                            link_hash = hashlib.sha1(link.encode()).digest()
+                            torrent['info']['pieces'] += link_hash
+                            total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
+                            torrent['info']['length'] = total_size
+                            torrent_data = bencodepy.encode(torrent)
+                            with open('feed.torrent', 'wb') as torrent_file:
+                                torrent_file.write(torrent_data)
+                                feed_msg = f"{RSS_COMMAND} {url}"
+                                SentRss(feed_meg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
