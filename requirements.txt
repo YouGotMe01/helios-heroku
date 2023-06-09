@@ -2,7 +2,6 @@ anytree
 aria2p
 asyncio
 beautifulsoup4
-bencode
 feedparser
 cfscrape
 cloudscraper
@@ -11,7 +10,6 @@ google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 gunicorn
-hashlib
 lk21
 lxml
 megasdkrestclient
