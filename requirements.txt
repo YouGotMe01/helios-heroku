@@ -2,7 +2,7 @@ anytree
 aria2p
 asyncio
 beautifulsoup4
-bencodepy==4.0.0
+bencodeing
 feedparser
 cfscrape
 cloudscraper
