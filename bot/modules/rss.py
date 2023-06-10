@@ -187,7 +187,7 @@ def rss_set_update(update, context):
         except:
             pass
         
-urls = url
+Urls = Feed_url
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
