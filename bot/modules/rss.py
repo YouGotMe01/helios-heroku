@@ -187,10 +187,6 @@ def rss_set_update(update, context):
         except:
             pass
         
-def feed_url(rss_list, rss_get):
-    return urls
-
-urls = feed_url(rss_list, rss_get)
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -226,7 +222,8 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                     
-                feed_count = 0  
+                feed_count = 0 
+                urls = feed_url(rss_list, rss_get)
                 for url in urls:      
                     rss_d = feedparser.parse(url)  
                     if RSS_COMMAND is not None:
