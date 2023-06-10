@@ -210,7 +210,7 @@ def rss_monitor(context):
                           Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 parse = True
-                for list in data[3]:
+                for item in data[3]:
                     if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
                         parse = False
                         feed_count += 1
@@ -225,7 +225,7 @@ def rss_monitor(context):
                 feed_count = 0 
                 urls = feed_url(rss_list, rss_get)
                 for url in urls:  
-                    rss_d = feedparser.parse(url)  
+                    rss_feed = feedparser.parse(url)  
                     if RSS_COMMAND is not None:
                         feed_url = url
                         def generate_torrent_file(feed_url):
@@ -252,6 +252,8 @@ def rss_monitor(context):
                         SentRss(feed_msg, context.bot)
                     feed_count += 1
                     sleep(5)
+        except Exception as e:
+            LOGGER.error(f"An error occurred while processing the RSS feed: {name}\n{e}")        
             DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
