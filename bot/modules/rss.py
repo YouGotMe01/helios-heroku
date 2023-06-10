@@ -224,7 +224,8 @@ def rss_monitor(context):
                     
                 feed_count = 0 
                 urls = feed_url(rss_list, rss_get)
-                for url in urls:      
+                for url in urls:  
+                    feed_url = "" 
                     rss_d = feedparser.parse(url)  
                     if RSS_COMMAND is not None:
                         feed_url = url
