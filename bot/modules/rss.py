@@ -189,6 +189,8 @@ def rss_set_update(update, context):
         
 def urls = feed_url (rss_list, rss_get):
     urls[]
+    return urls
+
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
