@@ -189,6 +189,7 @@ def rss_set_update(update, context):
         
 def feed_url(rss_list, rss_get):
     return urls
+
 urls = feed_url(rss_list, rss_get)
 def rss_monitor(context):
     with rss_dict_lock:
