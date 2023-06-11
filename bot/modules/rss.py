@@ -249,7 +249,7 @@ def rss_monitor(context):
                         feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                         feed_msg += f"<b>Link: </b><code>{url}</code>"
                         SentRss(feed_msg, context.bot)
-                    feed_count += 
+                    feed_count += 1
                     sleep(5)
             DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
