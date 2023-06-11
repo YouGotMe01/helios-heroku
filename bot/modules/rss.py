@@ -223,12 +223,11 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['link']
                     
                 feed_count = 0 
-                urls = feed_url(rss_list, rss_get)
+                urls = generate_urls(rss_list, rss_get)  # Renamed the variable to generate_urls
                 for url in urls:  
                     rss_feed = feedparser.parse(url)  
                     if RSS_COMMAND is not None:
-                        feed_url = url
-                        def generate_torrent_file(feed_url):
+                        def generate_torrent_file(feed_url):  # Renamed the function to generate_torrent_file
                             feed = feedparser.parse(feed_url)
                             torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
                             for entry in feed.entries:
@@ -245,15 +244,13 @@ def rss_monitor(context):
                                     torrent_file.write(torrent_data)
                                 feed_msg = f"/{RSS_COMMAND} {feed_url}"
                                 SentRss(feed_msg, context.bot)
-                        generate_torrent_file(feed_url)       
+                        generate_torrent_file(url)  # Pass the 'url' variable as an argument       
                     else:
                         feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                         feed_msg += f"<b>Link: </b><code>{url}</code>"
                         SentRss(feed_msg, context.bot)
-                    feed_count += 1
+                    feed_count += 
                     sleep(5)
-        except Exception as e:
-            LOGGER.error(f"An error occurred while processing the RSS feed: {name}\n{e}")        
             DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
@@ -268,9 +265,7 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_sub_handler = CommandHandler(BotCommands.RssSubCommand, rss_sub, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_unsub_handler = CommandHandler(BotCommands.RssUnSubCommand, rss_unsub, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-    rss_settings_handler = CommandHandler(BotCommands.RssSettingsCommand, rss_settings, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-    rss_buttons_handler = CallbackQueryHandler(rss_set_update, pattern="rss", run_async=True)
-    
+    rss_settings_handler = C
     dispatcher.add_handler(rss_list_handler)
     dispatcher.add_handler(rss_get_handler)
     dispatcher.add_handler(rss_sub_handler)
