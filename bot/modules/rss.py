@@ -223,7 +223,8 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['link']
                     
                 feed_count = 0 
-                urls = generate_urls(rss_list, rss_get)  # Renamed the variable to generate_urls
+                urls = generate_urls(rss_list, rss_get):
+                    return urls
                 for url in urls:  
                     rss_feed = feedparser.parse(url)  
                     if RSS_COMMAND is not None:
