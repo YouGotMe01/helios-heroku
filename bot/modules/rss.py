@@ -210,8 +210,8 @@ def rss_monitor(context):
                           Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 parse = True
-                for item in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
+                for keyword_list in data[3]:
+                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in keyword_list):
                         parse = False
                         feed_count += 1
                         break
