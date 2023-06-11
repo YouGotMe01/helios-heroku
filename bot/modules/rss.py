@@ -265,7 +265,8 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_sub_handler = CommandHandler(BotCommands.RssSubCommand, rss_sub, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_unsub_handler = CommandHandler(BotCommands.RssUnSubCommand, rss_unsub, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-    rss_settings_handler = C
+    rss_settings_handler = CommandHandler(BotCommands.RssSettingsCommand, rss_settings, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+    
     dispatcher.add_handler(rss_list_handler)
     dispatcher.add_handler(rss_get_handler)
     dispatcher.add_handler(rss_sub_handler)
