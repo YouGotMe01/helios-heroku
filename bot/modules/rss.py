@@ -232,9 +232,7 @@ def rss_monitor(context):
                             xml_data = response.text
                             soup = BeautifulSoup(xml_data, 'xml')
                             for item in soup.find_all('item'):
-                                title = item.find('title').text
-                        except Exception as e:
-                            print(f"An error occurred:        
+                                title = item.find('title').text      
                         def generate_torrent_file(feed_url):  
                             feed = feedparser.parse(feed_url)
                             torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
