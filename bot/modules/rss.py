@@ -223,7 +223,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['link']
                     
                 feed_count = 0 
-                urls = ['https://www.1tamilmv.cafe/index.php?/forums/forum/12-hd-rips-dvd-rips-br-rips/.xml' 'https://1tamilblasters.net/index.php?/forums/forum/7-tamil-new-movies-hdrips-bdrips-dvdrips-hdtv/.xml' 'https://www.1tamilmv.cafe/index.php?/forums/forum/11-web-hd-itunes-hd-bluray/.xml' 'https://1tamilblasters.net/index.php?/forums/forum/63-tamil-new-web-series-tv-shows/.xml' 'https://www.1tamilmv.cafe/index.php?/forums/forum/17-hollywood-movies-in-multi-audios/.xml' 'https://1tamilblasters.net/index.php?/forums/forum/9-tamil-dubbed-movies-bdrips-hdrips-dvdscr-hdcam-in-multi-audios/.xml' 'https://1tamilblasters.pw/index.php?/forums/forum/8-tamil-new-movies-tcrip-dvdscr-hdcam-predvd/.xml' 'https://www.1tamilmv.cafe/index.php?/forums/forum/10-predvd-dvdscr-cam-tc/.xml']
+                urls = ['feed_urls']
                 for url in urls:  
                     rss_feed = feedparser.parse(url)  
                     if RSS_COMMAND is not None:
