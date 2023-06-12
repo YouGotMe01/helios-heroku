@@ -1,6 +1,8 @@
+import request
 import feedparser
 import hashlib
 import bencodepy
+from bs4 import BeautifulSoup
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler, Updater
 from threading import Lock, Thread
@@ -222,12 +224,18 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                     
-                feed_count = 0 
-                urls = ['feed_urls']
-                for url in urls:  
                     rss_feed = feedparser.parse(url)  
                     if RSS_COMMAND is not None:
-                        def generate_torrent_file(feed_url):  # Renamed the function to generate_torrent_file
+                        feed_url = url
+                        try:
+                            response = requests.get(feed_url)
+                            xml_data = response.text
+                            soup = BeautifulSoup(xml_data, 'xml')
+                            for item in soup.find_all('item'):
+                                title = item.find('title').text
+                        except Exception as e:
+                            print(f"An error occurred:        
+                        def generate_torrent_file(feed_url):  
                             feed = feedparser.parse(feed_url)
                             torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
                             for entry in feed.entries:
