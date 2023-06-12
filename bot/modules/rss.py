@@ -224,44 +224,7 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                     
-                    rss_feed = feedparser.parse(url)  
-                def rss_monitor(context):
-    with rss_dict_lock:
-        if len(rss_dict) == 0:
-            rss_job.enabled = False
-            return
-        rss_saver = rss_dict.copy()
-
-    for name, data in rss_saver.items():
-        try:
-            rss_d = feedparser.parse(data[0])
-            last_link = rss_d.entries[0]['link']
-            last_title = rss_d.entries[0]['title']
-            if data[1] == last_link or data[2] == last_title:
-                continue
-            feed_count = 0
-            while True:
-                try:
-                    if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
-                        break
-                except IndexError:
-                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
-                          Maybe you need to use less RSS_DELAY to not miss some torrents")
-                    break
-                parse = True
-                for keyword_list in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in keyword_list):
-                        parse = False
-                        feed_count += 1
-                        break
-                if not parse:
-                    continue
-                try:
-                    url = rss_d.entries[feed_count]['links'][1]['href']
-                except IndexError:
-                    url = rss_d.entries[feed_count]['link']
-                
-                rss_feed = feedparser.parse(url)
+                    rss_feed = feedparser.parse(url)                  
                 
                 if RSS_COMMAND is not None:
                     feed_url = url
