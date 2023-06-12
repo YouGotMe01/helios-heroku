@@ -2,7 +2,7 @@ import feedparser
 import hashlib
 import bencodepy
 from time import sleep
-from telegram.ext import CommandHandler, CallbackQueryHandler,Updater
+from telegram.ext import CommandHandler, CallbackQueryHandler, Updater
 from threading import Lock, Thread
 
 from bot import dispatcher, job_queue, rss_dict, LOGGER, DB_URI, RSS_DELAY, RSS_CHAT_ID, RSS_COMMAND, AUTO_DELETE_MESSAGE_DURATION
@@ -243,8 +243,8 @@ def rss_monitor(context):
                                 with open('feed.torrent', 'wb') as torrent_file:
                                     torrent_file.write(torrent_data)
                                 feed_msg = f"/{RSS_COMMAND} {feed_url}"
-                        def SentRss(feed_msg, bot):
-                            bot.send_message(chat_id=chat_id, text=feed_msg, parse_mode=telegram.ParseMode.HTML)
+                        def SentRss(feed_msg, context.bot):
+                            context.bot.send_message(chat_id=chat_id, text=feed_msg, parse_mode=telegram.ParseMode.HTML)
                         generate_torrent_file(url)  # Pass the 'url' variable as an argument       
                     else:
                         feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
