@@ -247,8 +247,8 @@ def rss_monitor(context):
                                     with open('feed.torrent', 'wb') as torrent_file:
                                         torrent_file.write(torrent_data)
                                         feed_msg = f"/{RSS_COMMAND} {feed_url}"                                        
-                              SentRss(feed_msg, bot):
-                                  bot.send_message(chat_id=chat_id, text=feed_msg, parse_mode=telegram.ParseMode.HTML)                                              
+                             def SentRss(feed_msg, bot):
+                                 bot.send_message(chat_id=chat_id, text=feed_msg, parse_mode=telegram.ParseMode.HTML)                                              
                         else:
                             feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                             feed_msg += f"<b>Link: </b><code>{url}</code>"                        
