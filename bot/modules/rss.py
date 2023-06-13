@@ -187,21 +187,7 @@ def rss_set_update(update, context):
         except:
             pass
             
-def generate_torrent_file(feed_url):
-    feed = feedparser.parse(feed_url)
-    torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
-    for entry in feed.entries:
-        title = entry.title
-        link = entry.link
-        file_dict = {'path': [title], 'length': 0}
-        torrent['info']['files'].append(file_dict)
-        link_hash = hashlib.sha1(link.encode()).digest()
-        torrent['info']['pieces'] += link_hash
-        total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
-        torrent['info']['length'] = total_size
-    torrent_data = bencodepy.encode(torrent)
-    with open('feed.torrent', 'wb') as torrent_file:
-        torrent_file.write(torrent_data)            
+            
 
 def rss_monitor(context):
     with rss_dict_lock:
@@ -238,7 +224,22 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    feed_msg = f"/{RSS_COMMAND} {url}"
+                    def generate_torrent_file(feed_url):
+                        feed = feedparser.parse(feed_url)
+                        torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
+                        for entry in feed.entries:
+                            title = entry.title
+                            link = entry.link
+                            file_dict = {'path': [title], 'length': 0}
+                            torrent['info']['files'].append(file_dict)
+                            link_hash = hashlib.sha1(link.encode()).digest()
+                            torrent['info']['pieces'] += link_hash
+                            total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
+                            torrent['info']['length'] = total_size
+                        torrent_data = bencodepy.encode(torrent)
+                        with open('feed.torrent', 'wb') as torrent_file:
+                            torrent_file.write(torrent_data)
+                    feed_msg = f"/{RSS_COMMAND} {feed_url}"
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
