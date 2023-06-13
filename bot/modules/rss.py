@@ -1,4 +1,6 @@
-from feedparser import parse as feedparse
+import feedparser
+import hashlib
+import bencodepy
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from threading import Lock, Thread
@@ -29,7 +31,7 @@ def rss_get(update, context):
         if feed_url is not None and count > 0:
             try:
                 msg = sendMessage(f"Getting the last <b>{count}</b> item(s) from {title}", context.bot, update.message)
-                rss_d = feedparse(feed_url[0])
+                rss_d = feedparser.parse(feed_url[0])
                 item_info = ""
                 for item_num in range(count):
                     try:
@@ -184,6 +186,22 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
+            
+def generate_torrent_file(feed_url):
+    feed = feedparser.parse(feed_url)
+    torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
+    for entry in feed.entries:
+        title = entry.title
+        link = entry.link
+        file_dict = {'path': [title], 'length': 0}
+        torrent['info']['files'].append(file_dict)
+        link_hash = hashlib.sha1(link.encode()).digest()
+        torrent['info']['pieces'] += link_hash
+        total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
+        torrent['info']['length'] = total_size
+    torrent_data = bencodepy.encode(torrent)
+    with open('feed.torrent', 'wb') as torrent_file:
+        torrent_file.write(torrent_data)            
 
 def rss_monitor(context):
     with rss_dict_lock:
@@ -193,7 +211,7 @@ def rss_monitor(context):
         rss_saver = rss_dict
     for name, data in rss_saver.items():
         try:
-            rss_d = feedparse(data[0])
+            rss_d = feedparser.parse(data[0])
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
             if data[1] == last_link or data[2] == last_title:
@@ -220,7 +238,7 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
-                    feed_msg = f"{RSS_COMMAND} {url}"
+                    feed_msg = f"/{RSS_COMMAND} {url}"
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
