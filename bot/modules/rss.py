@@ -249,19 +249,19 @@ def rss_monitor(context):
                                 feed_msg = f"/{RSS_COMMAND} {feed_url}"                                        
                             def SentRss(feed_msg, bot):
                                 bot.send_message(chat_id=chat_id, text=feed_msg, parse_mode=telegram.ParseMode.HTML)                                              
-                        else:
-                            feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                            feed_msg += f"<b>Link: </b><code>{url}</code>"                        
-                        feed_count += 1
-                        sleep(5)
-                        DbManger().rss_update(name, str(last_link), str(last_title))
-                        with rss_dict_lock:
-                            rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
-                        LOGGER.info(f"Feed Name: {name}")
-                        LOGGER.info(f"Last item: {last_link}")
-                    except Exception as e:
-                        LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
-                        continue
+                else:
+                    feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"                        
+                feed_count += 1
+                sleep(5)
+            DbManger().rss_update(name, str(last_link), str(last_title))
+            with rss_dict_lock:
+                rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
+            LOGGER.info(f"Feed Name: {name}")
+            LOGGER.info(f"Last item: {last_link}")
+        except Exception as e:
+            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+            continue
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
