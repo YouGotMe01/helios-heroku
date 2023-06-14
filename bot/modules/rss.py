@@ -244,9 +244,9 @@ def generate_torrent_file(feed_url):
     feed = feedparser.parse(feed_url)
     torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
     for entry in feed.entries:
-        if 'title' not in entry:
+        title = entry.get('title')
+        if not title:
             continue
-        title = entry.title
         link = entry.link
         file_dict = {'path': [title], 'length': 0}
         torrent['info']['files'].append(file_dict)
@@ -257,6 +257,7 @@ def generate_torrent_file(feed_url):
     torrent_data = bencodepy.encode(torrent)
     with open('feed.torrent', 'wb') as torrent_file:
         torrent_file.write(torrent_data)
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
