@@ -248,13 +248,13 @@ if direct_link:
     generate_torrent_file(direct_link)
 else:
     print("Direct link not found for the provided URL.")
-    
+
 def extract_direct_link(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     direct_link = None
     return direct_link
-    
+
 def generate_torrent_file(direct_link):
     pass
     
