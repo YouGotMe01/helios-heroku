@@ -4,6 +4,7 @@ from time import time, sleep
 from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
+from tg_upload_status import TgUploadStatus
 
 from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, app, app_session, BOT_PM, LEECH_LOG
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
@@ -14,8 +15,19 @@ getLogger("pyrogram").setLevel(ERROR)
 
 IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
 
+class MyListener:
+    def on_upload_start(self, status):
+        print(f"Upload started for file {status.message.document.file_name}")
 
-class TgUploader:
+    def on_upload_progress(self, status, current, total):
+        print(f"Upload progress for file {status.message.document.file_name}: {current}/{total}")
+
+    def on_upload_complete(self, status, file_id):
+        print(f"Upload complete for file {status.message.document.file_name}: {file_id}")
+
+tg_status = TgUploadStatus(message, query)
+tg_status.set_listener(MyListener())
+tg_status.on_start()
 
     def __init__(self, name=None, path=None, size=0, listener=None):
         self.name = name
@@ -38,7 +50,7 @@ class TgUploader:
         self.isPrivate = listener.message.chat.type in ['private', 'group']
         self.__app = app
         self.__user_id = listener.message.from_user.id
-
+    
     def upload(self, o_files):
         for dirpath, subdir, files in sorted(walk(self.__path)):
             for file_ in sorted(files):
