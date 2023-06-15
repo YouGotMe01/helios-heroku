@@ -1,3 +1,4 @@
+import os
 import requests
 import feedparser
 import hashlib
@@ -252,18 +253,19 @@ def rss_monitor(context):
             continue
             
 def generate_torrent_file(file_path):
-    torrent = {'info': {'name': 'My Torrent', 'files': [], 'piece length': 262144, 'pieces': b''}}
-    with open(file_path, 'rb') as f:
-        file_data = f.read()
-        file_hash = hashlib.sha1(file_data).digest()
-        file_dict = {'path': [file_path], 'length': len(file_data), 'md5sum': hashlib.md5(file_data).hexdigest()}
-        torrent['info']['files'].append(file_dict)
-        torrent['info']['pieces'] += file_hash
-        total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
-        torrent['info']['length'] = total_size
-    torrent_data = bencodepy.encode(torrent)
-    with open('my_torrent.torrent', 'wb') as torrent_file:
-        torrent_file.write(torrent_data)
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as f:
+            file_data = f.read()
+            file_hash = hashlib.sha1(file_data).digest()
+            file_dict = {'path': [file_path], 'length': len(file_data), 'md5sum': hashlib.md5(file_data).hexdigest()}
+            torrent = {'info': {'name': 'My Torrent', 'files': [file_dict], 'piece length': 262144, 'pieces': file_hash}}
+            total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
+            torrent['info']['length'] = total_size
+        torrent_data = bencodepy.encode(torrent)
+        with open('my_torrent.torrent', 'wb') as torrent_file:
+            torrent_file.write(torrent_data)
+    else:
+        print(f"File at {file_path} does not exist")
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
