@@ -1,6 +1,8 @@
+import requests
 import feedparser
 import hashlib
 import bencodepy
+from bs4 import BeautifulSoup
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from threading import Lock, Thread
