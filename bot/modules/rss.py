@@ -255,7 +255,7 @@ def extract_direct_link(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     direct_link = None
-    link_element = soup.find('a', {'class': 'direct-link'})
+    link_element = soup.find('a', {'class': 'new-direct-link-class'})  # Replace 'new-direct-link-class' with the actual class or identifier
     if link_element is not None:
         direct_link = link_element['href']
     return direct_link
