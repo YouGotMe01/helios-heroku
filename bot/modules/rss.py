@@ -251,40 +251,19 @@ def rss_monitor(context):
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
             
-def extract_direct_link(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    direct_link = None
-    link_element = soup.find('a', {'class': 'new-direct-link-class'})  # Replace 'new-direct-link-class' with the actual class or identifier
-    if link_element is not None:
-        direct_link = link_element['href']
-    return direct_link
-
-def generate_torrent_file(feed_url):
-    feed = feedparser.parse(feed_url)
-    if 'title' not in feed.feed:
-        print("Feed does not have a title")
-        return
-    torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
-    for entry in feed.entries:
-        if 'title' not in entry or 'link' not in entry:
-            continue
-        title = entry['title']
-        link = entry['link']
-        direct_link = extract_direct_link(link)
-        if direct_link is None:
-            continue
-        file_dict = {'path': [title], 'length': 0}
+def generate_torrent_file(file_path):
+    torrent = {'info': {'name': 'My Torrent', 'files': [], 'piece length': 262144, 'pieces': b''}}
+    with open(file_path, 'rb') as f:
+        file_data = f.read()
+        file_hash = hashlib.sha1(file_data).digest()
+        file_dict = {'path': [file_path], 'length': len(file_data), 'md5sum': hashlib.md5(file_data).hexdigest()}
         torrent['info']['files'].append(file_dict)
-        link_hash = hashlib.sha1(direct_link.encode()).digest()
-        torrent['info']['pieces'] += link_hash
+        torrent['info']['pieces'] += file_hash
         total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
         torrent['info']['length'] = total_size
     torrent_data = bencodepy.encode(torrent)
-    torrent_file_path = '/path/to/save/feed.torrent'
-    with open(torrent_file_path, 'wb') as torrent_file:
+    with open('my_torrent.torrent', 'wb') as torrent_file:
         torrent_file.write(torrent_data)
-            
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
