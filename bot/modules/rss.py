@@ -253,7 +253,7 @@ def extract_direct_link(url):
     return direct_link
 
 # Usage example
-url = 'rss_feed'
+url = rss_feed
 direct_link = extract_direct_link(url)
 if direct_link:
     # Generate or download the torrent file using the direct link
