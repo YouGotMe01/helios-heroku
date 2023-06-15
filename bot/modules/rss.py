@@ -241,32 +241,25 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-
+            
+url = feed_url
+direct_link = extract_direct_link(url)
+if direct_link:
+    generate_torrent_file(direct_link)
+else:
+    print("Direct link not found for the provided URL.")
+    
 def extract_direct_link(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     direct_link = None
-
-    # Find the HTML elements containing the direct download link
-    # Extract the link and assign it to the direct_link variable
-
     return direct_link
-
-# Usage example
-url = url
-direct_link = extract_direct_link(url)
-if direct_link:
-    # Generate or download the torrent file using the direct link
-    generate_torrent_file(direct_link)
-else:
-    print("Direct link not found for the provided URL.")
             
 def generate_torrent_file(feed_url):
     feed = feedparser.parse(feed_url)
     if 'title' not in feed.feed:
         print("Feed does not have a title")
         return
-
     torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
     for entry in feed.entries:
         print(entry)  # Print the entry object for debugging
