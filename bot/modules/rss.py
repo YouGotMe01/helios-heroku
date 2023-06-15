@@ -241,6 +241,10 @@ def rss_monitor(context):
             continue
 def generate_torrent_file(feed_url):
     feed = feedparser.parse(feed_url)
+    if 'title' not in feed.feed:
+        print("Feed does not have a title")
+        return
+
     torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
     for entry in feed.entries:
         print(entry)  # Print the entry object for debugging
@@ -257,6 +261,7 @@ def generate_torrent_file(feed_url):
     torrent_data = bencodepy.encode(torrent)
     with open('feed.torrent', 'wb') as torrent_file:
         torrent_file.write(torrent_data)
+
             
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
