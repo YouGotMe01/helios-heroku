@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
 from socket import setdefaulttimeout
 from faulthandler import enable as faulthandler_enable
@@ -7,6 +6,7 @@ from qbittorrentapi import Client as qbClient
 from aria2p import API as ariaAPI, Client as ariaClient
 from os import remove as osremove, path as ospath, environ
 from requests import get as rget
+from bs4 import BeautifulSoup
 from json import loads as jsonloads
 from subprocess import Popen, run as srun, check_output
 from time import sleep, time
