@@ -267,21 +267,24 @@ def generate_torrent_file(feed_url):
         return
     torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
     for entry in feed.entries:
-        print(entry)  # Print the entry object for debugging
-        if 'title' not in entry:
+        if 'title' not in entry or 'link' not in entry:
             continue
         title = entry['title']
         link = entry['link']
+        direct_link = extract_direct_link(link)
+        if direct_link is None:
+            continue
         file_dict = {'path': [title], 'length': 0}
         torrent['info']['files'].append(file_dict)
-        link_hash = hashlib.sha1(link.encode()).digest()
+        link_hash = hashlib.sha1(direct_link.encode()).digest()
         torrent['info']['pieces'] += link_hash
         total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
         torrent['info']['length'] = total_size
     torrent_data = bencodepy.encode(torrent)
     torrent_file_path = '/path/to/save/feed.torrent'
-    with open(torrent_file_path,'wb') as torrent_file:
-        torrent_file.write(torrent_data)            
+    with open(torrent_file_path, 'wb') as torrent_file:
+        torrent_file.write(torrent_data)
+            
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
