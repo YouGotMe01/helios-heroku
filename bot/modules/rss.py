@@ -239,11 +239,11 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-
 def generate_torrent_file(feed_url):
     feed = feedparser.parse(feed_url)
     torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
     for entry in feed.entries:
+        print(entry)  # Print the entry object for debugging
         if 'title' not in entry:
             continue
         title = entry['title']
@@ -257,10 +257,7 @@ def generate_torrent_file(feed_url):
     torrent_data = bencodepy.encode(torrent)
     with open('feed.torrent', 'wb') as torrent_file:
         torrent_file.write(torrent_data)
-
-
-
-
+            
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
