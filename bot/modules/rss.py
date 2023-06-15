@@ -242,8 +242,8 @@ def rss_monitor(context):
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
             
-url = feed_url
-direct_link = extract_direct_link(url)
+feed_url = url
+direct_link = extract_direct_link(feed_url)
 if direct_link:
     generate_torrent_file(direct_link)
 else:
@@ -254,7 +254,10 @@ def extract_direct_link(url):
     soup = BeautifulSoup(response.content, 'html.parser')
     direct_link = None
     return direct_link
-            
+    
+def generate_torrent_file(direct_link):
+    pass
+    
 def generate_torrent_file(feed_url):
     feed = feedparser.parse(feed_url)
     if 'title' not in feed.feed:
