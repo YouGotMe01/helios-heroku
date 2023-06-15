@@ -189,7 +189,6 @@ def rss_set_update(update, context):
         except:
             pass
             
-            
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -199,12 +198,17 @@ def rss_monitor(context):
     for name, data in rss_saver.items():
         try:
             rss_d = feedparser.parse(data[0])
+            if not rss_d.entries:  # Check if entries list is empty
+                LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
+                continue
+            
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
             if data[1] == last_link or data[2] == last_title:
                 continue
+            
             feed_count = 0
-            while True:
+            while feed_count < len(rss_d.entries):  # Iterate over the entries list
                 try:
                     if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
                         break
@@ -212,6 +216,7 @@ def rss_monitor(context):
                     LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
                           Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
+                
                 parse = True
                 for item in data[3]:
                     if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in item):
@@ -220,10 +225,12 @@ def rss_monitor(context):
                         break
                 if not parse:
                     continue
+                
                 try:
                     url = rss_d.entries[feed_count]['links'][1]['href']
-                except IndexError:
-                    url = rss_d.entries[feed_count]['link']
+                except (IndexError, KeyError):
+                    url = rss_d.entries[feed_count].get('link')
+                
                 if RSS_COMMAND is not None:
                     generate_torrent_file(url)
                     feed_msg = f"/{RSS_COMMAND} {url}"
@@ -233,11 +240,13 @@ def rss_monitor(context):
                 sendRss(feed_msg, context.bot)
                 feed_count += 1
                 sleep(5)
+                
             DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
             LOGGER.info(f"Last item: {last_link}")
+            
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
@@ -272,9 +281,7 @@ def generate_torrent_file(feed_url):
     torrent_data = bencodepy.encode(torrent)
     torrent_file_path = '/path/to/save/feed.torrent'
     with open(torrent_file_path,'wb') as torrent_file:
-        torrent_file.write(torrent_data)
-
-            
+        torrent_file.write(torrent_data)            
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
