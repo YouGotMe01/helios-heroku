@@ -270,7 +270,8 @@ def generate_torrent_file(feed_url):
         total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
         torrent['info']['length'] = total_size
     torrent_data = bencodepy.encode(torrent)
-    with open('feed.torrent', 'wb') as torrent_file:
+    torrent_file_path = '/path/to/save/feed.torrent'
+    with open(torrent_file_path,'wb') as torrent_file:
         torrent_file.write(torrent_data)
 
             
