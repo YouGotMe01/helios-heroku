@@ -244,10 +244,8 @@ def generate_torrent_file(feed_url):
     feed = feedparser.parse(feed_url)
     torrent = {'info': {'name': feed.feed.title, 'files': [], 'piece length': 262144, 'pieces': b''}}
     for entry in feed.entries:
-        print(entry)  # Print the entire entry object for debugging
-        title = entry.get('title')
+        title = entry.get('title', '')
         if not title:
-            print("Entry doesn't have 'title' attribute:", entry)
             continue
         link = entry.link
         file_dict = {'path': [title], 'length': 0}
@@ -259,6 +257,7 @@ def generate_torrent_file(feed_url):
     torrent_data = bencodepy.encode(torrent)
     with open('feed.torrent', 'wb') as torrent_file:
         torrent_file.write(torrent_data)
+
 
 
 
