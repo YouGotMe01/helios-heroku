@@ -252,6 +252,15 @@ def rss_monitor(context):
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
             
+feed_url = eswar
+# Send a GET request to the feed URL
+response = requests.get(feed_url)
+# Parse the HTML content using BeautifulSoup
+soup = BeautifulSoup(response.text, "html.parser")
+# Find the actual URL
+actual_url = soup.find("a", class_="postlink")["href"]
+print(actual_url)
+            
 def generate_torrent_file(file_path):
     if os.path.exists(file_path):
         with open(file_path, 'rb') as f:
