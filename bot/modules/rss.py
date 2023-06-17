@@ -241,12 +241,12 @@ def rss_monitor(context):
                     # Find the actual URL
                     actual_url = soup.find("a", class_="postlink")["href"]
                     print(actual_url)
-                    
-                    feed_msg = f"/{RSS_COMMAND} {url}"
+                    generate_torrent_file(file_path)
+                    feed_msg = f"/{RSS_COMMAND} {feed_url}"
+                    sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"
-                sendRss(feed_msg, context.bot)
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"                
                 feed_count += 1
                 sleep(5)
                 
