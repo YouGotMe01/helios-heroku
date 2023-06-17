@@ -233,7 +233,15 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count].get('link')
                 
                 if RSS_COMMAND is not None:
-                    generate_torrent_file(url)
+                    feed_url = eswar
+                    # Send a GET request to the feed URL
+                    response = requests.get(feed_url)
+                    # Parse the HTML content using BeautifulSoup
+                    soup = BeautifulSoup(response.text, "html.parser")
+                    # Find the actual URL
+                    actual_url = soup.find("a", class_="postlink")["href"]
+                    print(actual_url)
+                    
                     feed_msg = f"/{RSS_COMMAND} {url}"
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
@@ -252,14 +260,6 @@ def rss_monitor(context):
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
             
-feed_url = eswar
-# Send a GET request to the feed URL
-response = requests.get(feed_url)
-# Parse the HTML content using BeautifulSoup
-soup = BeautifulSoup(response.text, "html.parser")
-# Find the actual URL
-actual_url = soup.find("a", class_="postlink")["href"]
-print(actual_url)
             
 def generate_torrent_file(file_path):
     if os.path.exists(file_path):
