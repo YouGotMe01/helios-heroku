@@ -233,7 +233,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count].get('link')
                 
                 if RSS_COMMAND is not None:
-                    feed_url = eswar
+                    feed_url = url
                     # Send a GET request to the feed URL
                     response = requests.get(feed_url)
                     # Parse the HTML content using BeautifulSoup
