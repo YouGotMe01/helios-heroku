@@ -262,10 +262,13 @@ def generate_torrent_file(file_path):
             total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
             torrent['info']['length'] = total_size
         torrent_data = bencodepy.encode(torrent)
-        with open('my_torrent.torrent', 'wb') as torrent_file:
+        torrent_file_path = 'my_torrent.torrent'
+        with open(torrent_file_path, 'wb') as torrent_file:
             torrent_file.write(torrent_data)
+        print(f"Torrent file saved: {torrent_file_path}")
     else:
         print(f"File at {file_path} does not exist")
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
