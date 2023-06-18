@@ -262,10 +262,10 @@ def rss_monitor(context):
             
 def fetch_feed(feed_url):
     feed = feedparser.parse(feed_url)
-    if feed.entries:
-        return feed.entries
+    if 'entries' in feed and feed['entries']:
+        return feed['entries']
     else:
-        return None  
+        return None
         
 def generate_torrent_file(file_path):
     if os.path.exists(file_path):
