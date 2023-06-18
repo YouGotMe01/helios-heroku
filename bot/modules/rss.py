@@ -195,11 +195,11 @@ def rss_monitor(context):
         if len(rss_dict) == 0:
             rss_job.enabled = False
             return
-        rss_saver = rss_dict
+        rss_saver = rss_dict.copy()  # Make a copy of the dictionary to avoid modifying it while iterating over it
     for name, data in rss_saver.items():
         try:
             rss_d = feedparser.parse(data[0])
-            if not rss_d.entries:  # Check if entries list is empty
+            if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
                 continue
             
@@ -208,48 +208,53 @@ def rss_monitor(context):
             if data[1] == last_link or data[2] == last_title:
                 continue
             
-            feed_count = 0
-            while feed_count < len(rss_d.entries):  # Iterate over the entries list
-                try:
-                    if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
-                        break
-                except IndexError:
-                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
-                          Maybe you need to use less RSS_DELAY to not miss some torrents")
+            for entry in rss_d.entries:
+                if entry['link'] == data[1] or entry['title'] == data[2]:
                     break
                 
                 parse = True
                 for item in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in item):
+                    if item.lower() not in entry['title'].lower():
                         parse = False
-                        feed_count += 1
                         break
                 if not parse:
                     continue
                 
                 try:
-                    url = rss_d.entries[feed_count]['links'][1]['href']
+                    url = entry['links'][1]['href']
                 except (IndexError, KeyError):
-                    url = rss_d.entries[feed_count].get('link')
+                    url = entry.get('link')
                 
                 if RSS_COMMAND is not None:
-                    feed_url = url
-                    # Send a GET request to the feed URL
-                    response = requests.get(feed_url)
-                    # Parse the HTML content using BeautifulSoup
+                    response = requests.get(url)
                     soup = BeautifulSoup(response.text, "html.parser")
-                    # Find the actual URL
                     actual_url = soup.find("a", class_="postlink")["href"]
                     print(actual_url)
-                    generate_torrent_file(file_path)
-                    feed_msg = f"/{RSS_COMMAND} {feed_url}"
-                    sendRss(feed_msg, context.bot)
+                    generate_torrent_file(actual_url)
                 else:
-                    feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"                
-                feed_count += 1
-                sleep(5)
+                    feed_msg = f"<b>Name: </b><code>{entry['title'].replace('>', '').replace('<', '')}</code>\n\n"
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"
+                    sendRss(feed_msg, context.bot)
                 
+                # Update the feed data
+                with rss_dict_lock:
+                    rss_dict[name] = [data[0], entry['link'], entry['title'], data[3]]
+            
+        except Exception as e:
+            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+            continue
+
+def generate_torrent_file(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
+    magnet_link = soup.find("a", href=re.compile(r"magnet:\?xt=urn:btih:"))["href"]
+    print(magnet_link)
+    # Generate the torrent file using the magnet link
+    torrent_data = magnet2torrent.convert(magnet_link)
+    torrent_file_path = 'my_torrent.torrent'
+    with open(torrent_file_path, 'wb') as torrent_file:
+        torrent_file.write(torrent_data)
+    print(f"Torrent file saved: {torrent_file_path}")
             DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
@@ -260,31 +265,6 @@ def rss_monitor(context):
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
             
-def fetch_feed(feed_url):
-    feed = feedparser.parse(feed_url)
-    if 'entries' in feed and feed['entries']:
-        return feed['entries']
-    else:
-        return None
-        
-def generate_torrent_file(file_path):
-    if os.path.exists(file_path):
-        with open(file_path, 'rb') as f:
-            file_data = f.read()
-            file_hash = hashlib.sha1(file_data).digest()
-            file_dict = {'path': [file_path], 'length': len(file_data), 'md5sum': hashlib.md5(file_data).hexdigest()}
-            torrent = {'info': {'name': 'My Torrent', 'files': [file_dict], 'piece length': 262144, 'pieces': file_hash}}
-            total_size = sum(file_dict['length'] for file_dict in torrent['info']['files'])
-            torrent['info']['length'] = total_size
-        torrent_data = bencodepy.encode(torrent)
-        torrent_file_path = 'my_torrent.torrent'
-        with open(torrent_file_path, 'wb') as torrent_file:
-            torrent_file.write(torrent_data)
-        print(f"Torrent file saved: {torrent_file_path}")
-    else:
-        print(f"File at {file_path} does not exist")
-
-
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
