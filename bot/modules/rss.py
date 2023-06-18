@@ -269,7 +269,8 @@ def rss_monitor(context):
             LOGGER.info(f"Last item: {last_link}")
             
         except Exception as e:
-            The modified code block looks like it should work correctly. Here's a summary of the changes:
+            The modified code block looks like it should work correctly.
+            Here's a summary of the changes:
                 1. The `requests.get` method is called only once per URL, and the response object is reused in the `BeautifulSoup` call and the regular expression search.
                 2. The code searches for the magnet link using a regular expression search instead of assuming that it will be in a specific anchor tag.
                 3. The code logs a warning message if no magnet link is found for the URL.
