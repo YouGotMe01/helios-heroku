@@ -231,6 +231,18 @@ def rss_monitor(context):
                     actual_url = soup.find("a", class_="postlink")["href"]
                     print(actual_url)
                     generate_torrent_file(actual_url)
+                    response = requests.get(url)
+                    soup = BeautifulSoup(response.text, "html.parser")
+                    magnet_link = soup.find("a", href=re.compile(r"magnet:\?xt=urn:btih:"))["href"]
+                    print(magnet_link)
+                    torrent_data = magnet2torrent.convert(magnet_link)
+                    torrent_file_path = 'my_torrent.torrent'
+                    with open(torrent_file_path, 'wb') as torrent_file:
+                        torrent_file.write(torrent_data)
+                    print(f"Torrent file saved: {torrent_file_path}")            
+                        except Exception as e:
+                    LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+                    continue
                 else:
                     feed_msg = f"<b>Name: </b><code>{entry['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
@@ -239,22 +251,7 @@ def rss_monitor(context):
                 # Update the feed data
                 with rss_dict_lock:
                     rss_dict[name] = [data[0], entry['link'], entry['title'], data[3]]
-            
-        except Exception as e:
-            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
-            continue
-
-def generate_torrent_file(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-    magnet_link = soup.find("a", href=re.compile(r"magnet:\?xt=urn:btih:"))["href"]
-    print(magnet_link)
-    # Generate the torrent file using the magnet link
-    torrent_data = magnet2torrent.convert(magnet_link)
-    torrent_file_path = 'my_torrent.torrent'
-    with open(torrent_file_path, 'wb') as torrent_file:
-        torrent_file.write(torrent_data)
-    print(f"Torrent file saved: {torrent_file_path}")
+                    
             DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
