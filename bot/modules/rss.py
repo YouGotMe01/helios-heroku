@@ -195,7 +195,7 @@ def rss_monitor(context):
         if len(rss_dict) == 0:
             rss_job.enabled = False
             return
-        rss_saver = rss_dict.copy()  # Make a copy of the dictionary to avoid modifying it while iterating over it
+        rss_saver = rss_dict.copy()
     for name, data in rss_saver.items():
         try:
             rss_d = feedparser.parse(data[0])
@@ -208,47 +208,50 @@ def rss_monitor(context):
             if data[1] == last_link or data[2] == last_title:
                 continue
             
-            for entry in rss_d.entries:
-                if entry['link'] == data[1] or entry['title'] == data[2]:
+            feed_count = 0
+            while feed_count < len(rss_d.entries):
+                try:
+                    if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
+                        break
+                except IndexError:
+                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
+                          Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 
                 parse = True
                 for item in data[3]:
-                    if item.lower() not in entry['title'].lower():
+                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in item):
                         parse = False
+                        feed_count += 1
                         break
                 if not parse:
                     continue
                 
                 try:
-                    url = entry['links'][1]['href']
+                    url = rss_d.entries[feed_count]['links'][1]['href']
                 except (IndexError, KeyError):
-                    url = entry.get('link')
+                    url = rss_d.entries[feed_count].get('link')
                 
                 if RSS_COMMAND is not None:
-                    response = requests.get(url)
+                    feed_url = url
+                    response = requests.get(feed_url)
+                    if response.status_code != 200:
+                        LOGGER.warning(f"Error {response.status_code} while fetching feed: {name} - Feed Link: {data[0]}")
+                        feed_count += 1
+                        continue
+                    
                     soup = BeautifulSoup(response.text, "html.parser")
                     actual_url = soup.find("a", class_="postlink")["href"]
                     print(actual_url)
-                    generate_torrent_file(actual_url)
-                    response = requests.get(url)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    magnet_link = soup.find("a", href=re.compile(r"magnet:\?xt=urn:btih:"))["href"]
-                    print(magnet_link)
-                    torrent_data = magnet2torrent.convert(magnet_link)
-                    torrent_file_path = 'my_torrent.torrent'
-                    with open(torrent_file_path, 'wb') as torrent_file:
-                        torrent_file.write(torrent_data)
-                    print(f"Torrent file saved: {torrent_file_path}")            
-                else:
-                    feed_msg = f"<b>Name: </b><code>{entry['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"
+                    generate_torrent_file(file_path)
+                    feed_msg = f"/{RSS_COMMAND} {feed_url}"
                     sendRss(feed_msg, context.bot)
+                else:
+                    feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"                
+                feed_count += 1
+                sleep(5)
                 
-                # Update the feed data
-                with rss_dict_lock:
-                    rss_dict[name] = [data[0], entry['link'], entry['title'], data[3]]
-                    
             DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
