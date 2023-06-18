@@ -2,7 +2,6 @@ import os
 import requests
 import feedparser
 import hashlib
-import magnet2torrent
 import bencodepy
 from bs4 import BeautifulSoup
 from time import sleep
