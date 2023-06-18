@@ -14,7 +14,7 @@ gunicorn
 lk21
 lxml
 megasdkrestclient
-magnet2torrent
+magnet2torrent==0.3.1
 pillow
 psutil
 psycopg2-binary
