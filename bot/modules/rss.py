@@ -240,9 +240,6 @@ def rss_monitor(context):
                     with open(torrent_file_path, 'wb') as torrent_file:
                         torrent_file.write(torrent_data)
                     print(f"Torrent file saved: {torrent_file_path}")            
-                        except Exception as e:
-                    LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
-                    continue
                 else:
                     feed_msg = f"<b>Name: </b><code>{entry['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
