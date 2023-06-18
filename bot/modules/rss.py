@@ -269,14 +269,9 @@ def rss_monitor(context):
             LOGGER.info(f"Last item: {last_link}")
             
         except Exception as e:
-            The modified code block looks like it should work correctly.
-            Here's a summary of the changes:
-                1. The `requests.get` method is called only once per URL, and the response object is reused in the `BeautifulSoup` call and the regular expression search.
-                2. The code searches for the magnet link using a regular expression search instead of assuming that it will be in a specific anchor tag.
-                3. The code logs a warning message if no magnet link is found for the URL.
-                4. The code logs an info message when the torrent file is saved and updates the RSS feed tracking information in the database.
-                Overall, these changes should improve the efficiency and robustness of the RSS feed processing code.
-                                  
+            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+            continue
+            
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
