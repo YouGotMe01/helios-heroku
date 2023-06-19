@@ -121,6 +121,7 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
+                        thumb = "/path/to/[img]https://img.imageride.net/images/2023/06/19/IMG_20220614_221001_105.jpeg[/img]"
                     self.__sent_msg = client.send_video, parse_mode=parseMode.HTML(chat_id=leechchat, video=up_path,
                                                                   caption=cap_mono,
                                                                   duration=duration,
