@@ -3,6 +3,7 @@ import requests
 import feedparser
 import hashlib
 import bencodepy
+import libtorrent as lt
 from bs4 import BeautifulSoup
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
