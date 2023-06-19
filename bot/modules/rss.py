@@ -189,6 +189,7 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
+
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -201,12 +202,12 @@ def rss_monitor(context):
             if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
                 continue
-            
+
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
             if data[1] == last_link or data[2] == last_title:
                 continue
-            
+
             feed_count = 0
             while feed_count < len(rss_d.entries):
                 try:
@@ -216,7 +217,7 @@ def rss_monitor(context):
                     LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
                           Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
-                
+
                 parse = True
                 for item in data[3]:
                     if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in item):
@@ -225,19 +226,20 @@ def rss_monitor(context):
                         break
                 if not parse:
                     continue
-                
+
                 try:
                     url = rss_d.entries[feed_count]['links'][1]['href']
                 except (IndexError, KeyError):
                     url = rss_d.entries[feed_count].get('link')
-                
+
                 if RSS_COMMAND is not None:
                     feed_url = url
                     response = requests.get(feed_url)
                     if response.status_code != 200:
                         LOGGER.warning(f"Error {response.status_code} while fetching feed: {name} - Feed Link: {data[0]}")
                         feed_count += 1
-                        continue                                        
+                        continue
+
                     soup = BeautifulSoup(response.text, "html.parser")
                     magnet_link = None
                     for a_tag in soup.find_all('a', href=True):
@@ -245,20 +247,32 @@ def rss_monitor(context):
                         if href.startswith('magnet:?xt=urn:btih:'):
                             magnet_link = href
                             break
+
                     if magnet_link is None:
                         LOGGER.warning(f"No magnet link found for URL: {url}")
                         feed_count += 1
-                        continue                   
-                    torrent_data = magnet2torrent.convert(magnet_link)
-                    torrent_file_path = 'my_torrent.torrent'
-                    with open(torrent_file_path, 'wb') as torrent_file:
-                        torrent_file.write(torrent_data)
-                    LOGGER.info(f"Torrent file saved: {torrent_file_path}")
-                    feed_msg = f"/{RSS_COMMAND} {feed_url}"
-                    sendRss(feed_msg, context.bot)
+                        continue
+
+                    ses = lt.session()
+                    params = {
+                        'save_path': '.',  # Set the path where you want to save the torrent file
+                        'storage_mode': lt.storage_mode_t(2)  # Set the storage mode (optional)
+                    }
+                    handle = lt.add_magnet_uri(ses, magnet_link, params)
+                    lt.wait_for_alert(lambda: handle.is_seed(), timeout=lt.seconds(5))
+
+                    if handle.is_seed():
+                        LOGGER.info("Torrent download complete")
+                        torrent_file_path = handle.torrent_file().name()
+                        feed_msg = f"/{RSS_COMMAND} {feed_url}"
+                        sendRss(feed_msg, context.bot)
+                    else:
+                        LOGGER.warning("Torrent download failed or not completed")
+
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"                
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"
+
                 feed_count += 1
                 sleep(5)
                 
