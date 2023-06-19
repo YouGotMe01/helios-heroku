@@ -1,5 +1,5 @@
 import cloudscraper
-import requests
+import re
 import feedparser
 from bs4 import BeautifulSoup
 from time import sleep
