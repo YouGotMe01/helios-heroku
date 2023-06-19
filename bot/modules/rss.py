@@ -1,8 +1,6 @@
-import os
+import cloudscraper
 import requests
 import feedparser
-import hashlib
-import bencodepy
 from bs4 import BeautifulSoup
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -16,6 +14,7 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
+magnets = []
 
 def rss_list(update, context):
     if len(rss_dict) > 0:
@@ -233,42 +232,18 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count].get('link')
 
                 if RSS_COMMAND is not None:
-                    feed_url = url
-                    response = requests.get(feed_url)
-                    if response.status_code != 200:
-                        LOGGER.warning(f"Error {response.status_code} while fetching feed: {name} - Feed Link: {data[0]}")
-                        feed_count += 1
-                        continue
-
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    magnet_link = None
-                    for a_tag in soup.find_all('a', href=True):
-                        href = a_tag['href']
-                        if href.startswith('magnet:?xt=urn:btih:'):
-                            magnet_link = href
+                    hijk = url
+                    scraper = cloudscraper.create_scraper(allow_brotli=False)
+                    lmno=scraper.get(hijk).text 
+                    soup4=BeautifulSoup(lmno,'html.parser')
+                    for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
+                        url=pqrs.get('href')
+                        if url in magnets:
                             break
-
-                    if magnet_link is None:
-                        LOGGER.warning(f"No magnet link found for URL: {url}")
-                        feed_count += 1
-                        continue
-
-                    ses = lt.session()
-                    params = {
-                        'save_path': '.',  # Set the path where you want to save the torrent file
-                        'storage_mode': lt.storage_mode_t(2)  # Set the storage mode (optional)
-                    }
-                    handle = lt.add_magnet_uri(ses, magnet_link, params)
-                    lt.wait_for_alert(lambda: handle.is_seed(), timeout=lt.seconds(5))
-
-                    if handle.is_seed():
-                        LOGGER.info("Torrent download complete")
-                        torrent_file_path = handle.torrent_file().name()
-                        feed_msg = f"/{RSS_COMMAND} {feed_url}"
+                        else: 
+                            magnets.append(url)
+                        feed_msg = f"/{RSS_COMMAND} {url}"
                         sendRss(feed_msg, context.bot)
-                    else:
-                        LOGGER.warning("Torrent download failed or not completed")
-
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
