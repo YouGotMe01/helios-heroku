@@ -25,7 +25,7 @@ class TgUploader:
         self.__total_files = 0
         self.__is_cancelled = False
         self.__as_doc = AS_DOCUMENT
-        self.thumb = thumb
+        self.__thumb = thumb
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__resource_lock = RLock()
@@ -216,9 +216,10 @@ class TgUploader:
             self.__as_doc = True
         elif self.__listener.message.from_user.id in AS_MEDIA_USERS:
             self.__as_doc = False
-        if self.thumb is not None and not ospath.lexists(self.thumb):
+        thumb = self.thumb  # Assign the value of thumb to thumb
+        if thumb is not None and not ospath.lexists(thumb):
             print("The specified path does not exist.")
-            return  
+            return
 
     @property
     def speed(self):
