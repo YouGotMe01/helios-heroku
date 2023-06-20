@@ -15,7 +15,7 @@ getLogger("pyrogram").setLevel(ERROR)
 IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
 
 class TgUploader:
-    def __init__(self, name=None, path=None, size=0, listener=None):
+    def __init__(self, name=None, path=None, size=0, listener=None, thumb=None):
         self.name = name
         self.uploaded_bytes = 0
         self._last_uploaded = 0
@@ -25,7 +25,7 @@ class TgUploader:
         self.__total_files = 0
         self.__is_cancelled = False
         self.__as_doc = AS_DOCUMENT
-        self.__thumb =thumb
+        self.__thumb = thumb
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__resource_lock = RLock()
