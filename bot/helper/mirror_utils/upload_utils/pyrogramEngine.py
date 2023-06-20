@@ -25,7 +25,7 @@ class TgUploader:
         self.__total_files = 0
         self.__is_cancelled = False
         self.__as_doc = AS_DOCUMENT
-        self.__thumb = thumb
+        self.thumb = thumb
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__resource_lock = RLock()
@@ -121,8 +121,8 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                        thumb = "/path/to/https://img.imageride.net/images/2023/06/19/IMG_20220614_221001_105.th.jpeg"
-                        uploader = TgUploader(name="MyUploader", path="/path/to/files", size=1000, listener=my_listener, thumb=thumb)
+                        uploader = TgUploader(name="MyUploader", path="/path/to/files", size=1000, listener=my_listener, thumb="/path/to/https://img.imageride.net/images/2023/06/19/IMG_20220614_221001_105.th.jpeg")
+                        uploader.upload(o_files={})
                     self.__sent_msg = client.send_video (chat_id=leechchat, video=up_path,
                                                                   caption=cap_mono,
                                                                   duration=duration,
