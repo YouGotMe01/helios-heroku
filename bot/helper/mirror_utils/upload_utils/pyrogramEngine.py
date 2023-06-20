@@ -216,7 +216,7 @@ class TgUploader:
             self.__as_doc = True
         elif self.__listener.message.from_user.id in AS_MEDIA_USERS:
             self.__as_doc = False
-        if not ospath.lexists(self.__thumb):
+        if self.thumb is not None and not ospath.lexists(self.thumb):
             print("The specified path does not exist.")
             return  
 
