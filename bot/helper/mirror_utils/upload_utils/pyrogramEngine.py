@@ -125,7 +125,7 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                        thumb="/path/to/https://img.imageride.net/images/2023/06/19/IMG_20220614_221001_105.th.jpeg")
+                        thumb="/path/to/https://img.imageride.net/images/2023/06/19/IMG_20220614_221001_105.th.jpeg"
                         uploader = TgUploader(name="MyUploader", path="/path/to/files", size=1000, listener=my_listener, thumb=thumb)
                     self.__sent_msg = client.send_video (chat_id=leechchat, video=up_path,
                                                                   caption=cap_mono,
