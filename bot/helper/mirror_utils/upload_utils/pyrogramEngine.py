@@ -70,7 +70,11 @@ class TgUploader:
         LOGGER.info(f"Leech Completed: {self.name}")
         size = get_readable_file_size(self.__size)
         self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
-
+        if self.__thumb is not None and not ospath.lexists(self.__thumb):
+            print("The specified path does not exist.")
+            return
+        thumb = self.__thumb
+        
     def __upload_file(self, up_path, file_, dirpath):
         fsize = ospath.getsize(up_path)
         if fsize > 2097152000:
@@ -121,8 +125,8 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                        uploader = TgUploader(name="MyUploader", path="/path/to/files", size=1000, listener=my_listener, thumb="/path/to/https://img.imageride.net/images/2023/06/19/IMG_20220614_221001_105.th.jpeg")
-                        uploader.upload(o_files={})
+                        thumb="/path/to/https://img.imageride.net/images/2023/06/19/IMG_20220614_221001_105.th.jpeg")
+                        uploader = TgUploader(name="MyUploader", path="/path/to/files", size=1000, listener=my_listener, thumb=thumb)
                     self.__sent_msg = client.send_video (chat_id=leechchat, video=up_path,
                                                                   caption=cap_mono,
                                                                   duration=duration,
