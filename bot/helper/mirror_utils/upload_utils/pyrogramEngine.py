@@ -15,7 +15,7 @@ getLogger("pyrogram").setLevel(ERROR)
 IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
 
 class TgUploader:
-    def __init__(self, name=None, path=None, size=0, listener=None, thumb=None):
+    def __init__(self, name=None, path=None, size=0, listener=None):
         self.name = name
         self.uploaded_bytes = 0
         self._last_uploaded = 0
@@ -25,7 +25,7 @@ class TgUploader:
         self.__total_files = 0
         self.__is_cancelled = False
         self.__as_doc = AS_DOCUMENT
-        self.__thumb = thumb
+        self.__thumb = f"Thumbnails/{listener.message.from_user.id}.jpg"
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__resource_lock = RLock()
@@ -70,11 +70,7 @@ class TgUploader:
         LOGGER.info(f"Leech Completed: {self.name}")
         size = get_readable_file_size(self.__size)
         self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
-        if self.__thumb is not None and not ospath.lexists(self.thumb):
-            print("The specified path does not exist.")
-            return
-        thumb = self.__thumb
-        
+                
     def __upload_file(self, up_path, file_, dirpath):
         fsize = ospath.getsize(up_path)
         if fsize > 2097152000:
@@ -125,8 +121,6 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                        thumb="/path/to/https://img.imageride.net/images/2023/06/19/IMG_20220614_221001_105.th.jpeg"
-                        uploader = TgUploader(name="MyUploader", path="/path/to/files", size=1000, listener=my_listener, thumb=thumb)
                     self.__sent_msg = client.send_video (chat_id=leechchat, video=up_path,
                                                                   caption=cap_mono,
                                                                   duration=duration,
@@ -220,10 +214,8 @@ class TgUploader:
             self.__as_doc = True
         elif self.__listener.message.from_user.id in AS_MEDIA_USERS:
             self.__as_doc = False
-        thumb = self.__thumb  # Assign the value of thumb to thumb
-        if thumb is not None and not ospath.lexists(thumb):
-            print("The specified path does not exist.")
-            return
+        if not ospath.lexists(self.__thumb):
+            self.__thumb = None
 
     @property
     def speed(self):
