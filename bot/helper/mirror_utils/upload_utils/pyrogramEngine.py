@@ -25,7 +25,7 @@ class TgUploader:
         self.__total_files = 0
         self.__is_cancelled = False
         self.__as_doc = AS_DOCUMENT
-        self.__thumb = thumb
+        self.thumb = thumb
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__resource_lock = RLock()
@@ -70,10 +70,10 @@ class TgUploader:
         LOGGER.info(f"Leech Completed: {self.name}")
         size = get_readable_file_size(self.__size)
         self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
-        if self.__thumb is not None and not ospath.lexists(self.__thumb):
+        if self.thumb is not None and not ospath.lexists(self.thumb):
             print("The specified path does not exist.")
             return
-        thumb = self.__thumb
+        thumb = self.thumb
         
     def __upload_file(self, up_path, file_, dirpath):
         fsize = ospath.getsize(up_path)
@@ -101,7 +101,7 @@ class TgUploader:
             cap_mono = f"<b>{file__}</b>"
         cap_mono = cap_mono + f'\n\n<b>𝗡𝗲𝘄 𝗨𝗽𝗱𝗮𝘁𝗲𝘀 𝗝𝗼𝗶𝗻 𝗡𝗼𝘄</b>\n👇👇👇👇👇👇👇👇\n\nhttps://t.me/+KgorOpsvehIyOTIx'
         notMedia = False
-        thumb = self.__thumb
+        thumb = self.thumb
         self.__is_corrupted = False
         try:
             is_video, is_audio = get_media_streams(up_path)
@@ -111,7 +111,7 @@ class TgUploader:
                     if thumb is None:
                         thumb = take_ss(up_path, duration)
                         if self.__is_cancelled:
-                            if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
+                            if self.thumb is None and thumb is not None and ospath.lexists(thumb):
                                 osremove(thumb)
                             return
                     if thumb is not None:
@@ -173,7 +173,7 @@ class TgUploader:
                 if is_video and thumb is None:
                     thumb = take_ss(up_path, None)
                     if self.__is_cancelled:
-                        if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
+                        if self.thumb is None and thumb is not None and ospath.lexists(thumb):
                             osremove(thumb)
                         return
                 self.__sent_msg = client.send_document(chat_id=leechchat, document=up_path,
@@ -197,7 +197,7 @@ class TgUploader:
             LOGGER.error(f"{err} Path: {up_path}")
             self.__corrupted += 1
             self.__is_corrupted = True
-        if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
+        if self.thumb is None and thumb is not None and ospath.lexists(thumb):
             osremove(thumb)
         if not self.__is_cancelled and \
                    (not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_mltb")):
