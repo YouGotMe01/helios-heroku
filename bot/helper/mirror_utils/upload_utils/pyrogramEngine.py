@@ -217,7 +217,8 @@ class TgUploader:
         elif self.__listener.message.from_user.id in AS_MEDIA_USERS:
             self.__as_doc = False
         if not ospath.lexists(self.__thumb):
-            self.__thumb = None
+            print("The specified path does not exist.")
+            return  
 
     @property
     def speed(self):
