@@ -14,7 +14,6 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
-magnets = []
 
 def rss_list(update, context):
     if len(rss_dict) > 0:
@@ -188,7 +187,8 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-
+      
+magnets = set()
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -207,60 +207,51 @@ def rss_monitor(context):
             if data[1] == last_link or data[2] == last_title:
                 continue
 
-            feed_count = 0
-            while feed_count < len(rss_d.entries):
-                try:
-                    if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
-                        break
-                except IndexError:
-                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
-                          Maybe you need to use less RSS_DELAY to not miss some torrents")
+            for entry in rss_d.entries:
+                entry_link = entry['link']
+                entry_title = entry['title']
+                
+                if data[1] == entry_link or data[2] == entry_title:
                     break
 
-                parse = True
-                for item in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in item):
-                        parse = False
-                        feed_count += 1
-                        break
+                parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
                 if not parse:
                     continue
 
                 try:
-                    url = rss_d.entries[feed_count]['links'][1]['href']
+                    url = entry['links'][1]['href']
                 except (IndexError, KeyError):
-                    url = rss_d.entries[feed_count].get('link')
+                    url = entry.get('link')
 
                 if url in magnets:
-                    feed_count += 1
                     continue
                 else:
-                    magnets.append(url)
+                    magnets.add(url)
 
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
-                    lmno=scraper.get(hijk).text 
-                    soup4=BeautifulSoup(lmno,'html.parser')
-                    for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
-                        url=pqrs.get('href')
+                    lmno = scraper.get(hijk).text 
+                    soup4 = BeautifulSoup(lmno, 'html.parser')
+                    for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}): 
+                        url = pqrs.get('href')
                     feed_msg = f"/{RSS_COMMAND} {url}"
                     sendRss(feed_msg, context.bot)
                 else:
-                    feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
+                    feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
-                feed_count += 1
-                sleep(5)
-                
-            DbManger().rss_update(name, str(last_link), str(last_title))
+                time.sleep(5)
+
+            DbManager().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
             LOGGER.info(f"Last item: {last_link}")
-            
+
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
