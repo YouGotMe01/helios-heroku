@@ -231,6 +231,12 @@ def rss_monitor(context):
                 except (IndexError, KeyError):
                     url = rss_d.entries[feed_count].get('link')
 
+                if url in magnets:
+                    feed_count += 1
+                    continue
+                else:
+                    magnets.append(url)
+
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
@@ -238,16 +244,11 @@ def rss_monitor(context):
                     soup4=BeautifulSoup(lmno,'html.parser')
                     for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
                         url=pqrs.get('href')
-                        if url in magnets:
-                            break
-                        else: 
-                            magnets.append(url)
-                        feed_msg = f"/{RSS_COMMAND} {url}"
-                        sendRss(feed_msg, context.bot)
+                    feed_msg = f"/{RSS_COMMAND} {url}"
+                    sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
-
                 feed_count += 1
                 sleep(5)
                 
@@ -260,7 +261,7 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-            
+
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
