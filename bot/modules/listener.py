@@ -18,7 +18,7 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet
 class MirrorLeechListener:
@@ -215,7 +215,7 @@ class MirrorLeechListener:
 
     def onUploadComplete(self, link: str, size, files, folders, typ, name):
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
-            DbManger().rm_complete_task(self.message.link)
+            DbManager().rm_complete_task(self.message.link)
         mesg = self.message.text.split('\n')
         message_args = mesg[0].split(' ', maxsplit=1)
         reply_to = self.message.reply_to_message
@@ -430,7 +430,7 @@ class MirrorLeechListener:
             update_all_messages()
 
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
-            DbManger().rm_complete_task(self.message.link)
+            DbManager().rm_complete_task(self.message.link)
 
     def onUploadError(self, error):
         e_str = error.replace('<', '').replace('>', '')
@@ -451,4 +451,4 @@ class MirrorLeechListener:
             update_all_messages()
 
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
-            DbManger().rm_complete_task(self.message.link)
+            DbManager().rm_complete_task(self.message.link)
