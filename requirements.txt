@@ -14,7 +14,7 @@ lk21
 lxml
 megasdkrestclient
 pillow
-psycopg2
+psycopg2_binary
 psutil
 psycopg2-binary
 pybase64
