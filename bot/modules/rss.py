@@ -13,7 +13,7 @@ from bot import dispatcher, job_queue, rss_dict, LOGGER, DB_URI, RSS_DELAY, RSS_
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, auto_delete_message, sendRss
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
@@ -94,7 +94,7 @@ def rss_sub(update, context):
             sub_msg += f"\n\n<b>Filters: </b><code>{filters}</code>"
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
-            DbManger().rss_add(title, feed_link, last_link, last_title, filters)
+            db_manager.rss_add(title, feed_link, last_link, last_title, filters)
             with rss_dict_lock:
                 if len(rss_dict) == 0:
                     rss_job.enabled = True
@@ -133,7 +133,7 @@ def rss_unsub(update, context):
             LOGGER.error(msg)
             sendMessage(msg, context.bot, update.message)
         else:
-            DbManger().rss_delete(title)
+            db_manager.rss_delete(title)
             with rss_dict_lock:
                 del rss_dict[title]
             sendMessage(f"Rss link with Title: <code>{title}</code> has been removed!", context.bot, update.message)
@@ -165,7 +165,7 @@ def rss_set_update(update, context):
     elif data[1] == 'unsuball':
         query.answer()
         if len(rss_dict) > 0:
-            DbManger().trunc_table('rss')
+            db_manager.trunc_table('rss')
             with rss_dict_lock:
                 rss_dict.clear()
             rss_job.enabled = False
@@ -269,7 +269,7 @@ def rss_monitor(context):
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
                 time.sleep(5)
 
-            Db_Manager.rss_update(name, str(last_link), str(last_title))
+            db_manager.rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
