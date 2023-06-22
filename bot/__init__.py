@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from pyrogram import Client, enums
 from asyncio import get_event_loop
 from megasdkrestclient import MegaSdkRestClient, errors as mega_err
-from bot import DbManager
+from bot.helper.ext_utils.db_handler import DbManager
 
 
 main_loop = get_event_loop()
