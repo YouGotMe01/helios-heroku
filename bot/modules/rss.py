@@ -1,3 +1,5 @@
+import os
+import psycopg2
 import cloudscraper
 import re
 import feedparser
@@ -187,7 +189,30 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-      
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+class DbManager:
+    def __init__(self, db_uri):
+        self.db_uri = db_uri
+        self.conn = psycopg2.connect(db_uri)
+
+    def __enter__(self):
+        return self.conn.cursor()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.conn.commit()
+        self.conn.close()
+
+    def rss_update(self, name, last_link, last_title):
+        with self.__enter__() as cur:
+            cur.execute("UPDATE rss_data SET last_link = %s, last_title = %s WHERE name = %s", (last_link, last_title, name))
+
+if DATABASE_URL is not None:
+    db_manager = DbManager(DATABASE_URL)
+else:
+    db_manager = None
+    
 magnets = set()
 def rss_monitor(context):
     with rss_dict_lock:
