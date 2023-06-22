@@ -203,6 +203,7 @@ class DbManager:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.conn.commit()
+        self.conn.cursor().close()
         self.conn.close()
 
     def rss_update(self, name, last_link, last_title):
@@ -268,7 +269,7 @@ def rss_monitor(context):
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
                 time.sleep(5)
 
-            DbManager().rss_update(name, str(last_link), str(last_title))
+            Db_Manager.rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
