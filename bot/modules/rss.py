@@ -197,8 +197,13 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
-        self.conn = psycopg2.connect(db_uri)
-
+        try:            
+            self.conn = psycopg2.connect(db_uri)
+        except DatabaseError as error:
+            self.cur.execute("ROLLBACK")
+            LOGGER.error(f"Error in DB initialization: {error}")
+            print(error)
+            
     def __enter__(self):
         return self.conn.cursor()
 
