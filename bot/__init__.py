@@ -1,4 +1,3 @@
-import DbManager
 from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
 from socket import setdefaulttimeout
 from faulthandler import enable as faulthandler_enable
@@ -16,6 +15,7 @@ from dotenv import load_dotenv
 from pyrogram import Client, enums
 from asyncio import get_event_loop
 from megasdkrestclient import MegaSdkRestClient, errors as mega_err
+from psycopg2 import DbManager
 
 main_loop = get_event_loop()
 
