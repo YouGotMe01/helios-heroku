@@ -3,7 +3,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage
 from telegram.ext import CommandHandler
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 
 
 def authorize(update, context):
@@ -17,7 +17,7 @@ def authorize(update, context):
         if user_id in AUTHORIZED_CHATS:
             msg = 'User Already Authorized!'
         elif DB_URI is not None:
-            msg = DbManger().user_auth(user_id)
+            msg = DbManager().user_auth(user_id)
             AUTHORIZED_CHATS.add(user_id)
         else:
             AUTHORIZED_CHATS.add(user_id)
@@ -27,7 +27,7 @@ def authorize(update, context):
         if chat_id in AUTHORIZED_CHATS:
             msg = 'Chat Already Authorized!'
         elif DB_URI is not None:
-            msg = DbManger().user_auth(chat_id)
+            msg = DbManager().user_auth(chat_id)
             AUTHORIZED_CHATS.add(chat_id)
         else:
             AUTHORIZED_CHATS.add(chat_id)
@@ -45,7 +45,7 @@ def addleechlog(update, context):
         if user_id in LEECH_LOG:
             msg = 'Chat Already in Leech Logs'
         elif DB_URI is not None:
-            msg = DbManger().addleech_log(user_id)
+            msg = DbManager().addleech_log(user_id)
             LEECH_LOG.add(user_id)
         else:
             LEECH_LOG.add(user_id)
@@ -55,7 +55,7 @@ def addleechlog(update, context):
         if chat_id in LEECH_LOG:
             msg = 'Chat Already in Leech Logs'
         elif DB_URI is not None:
-            msg = DbManger().addleech_log(chat_id)
+            msg = DbManager().addleech_log(chat_id)
             LEECH_LOG.add(chat_id)
         else:
             LEECH_LOG.add(chat_id)
@@ -72,7 +72,7 @@ def rmleechlog(update, context):
     if user_id:
         if user_id in LEECH_LOG:
             if DB_URI is not None:
-                msg = DbManger().rmleech_log(user_id)
+                msg = DbManager().rmleech_log(user_id)
             else:
                 msg = 'User removed from leech logs'
             LEECH_LOG.remove(user_id)
@@ -82,7 +82,7 @@ def rmleechlog(update, context):
         chat_id = update.effective_chat.id
         if chat_id in LEECH_LOG:
             if DB_URI is not None:
-                msg = DbManger().rmleech_log(chat_id)
+                msg = DbManager().rmleech_log(chat_id)
             else:
                 msg = 'Chat removed from leech logs!'
             LEECH_LOG.remove(chat_id)
@@ -101,7 +101,7 @@ def unauthorize(update, context):
     if user_id:
         if user_id in AUTHORIZED_CHATS:
             if DB_URI is not None:
-                msg = DbManger().user_unauth(user_id)
+                msg = DbManager().user_unauth(user_id)
             else:
                 msg = 'User Unauthorized'
             AUTHORIZED_CHATS.remove(user_id)
@@ -111,7 +111,7 @@ def unauthorize(update, context):
         chat_id = update.effective_chat.id
         if chat_id in AUTHORIZED_CHATS:
             if DB_URI is not None:
-                msg = DbManger().user_unauth(chat_id)
+                msg = DbManager().user_unauth(chat_id)
             else:
                 msg = 'Chat Unauthorized'
             AUTHORIZED_CHATS.remove(chat_id)
@@ -130,7 +130,7 @@ def addSudo(update, context):
         if user_id in SUDO_USERS:
             msg = 'Already Sudo!'
         elif DB_URI is not None:
-            msg = DbManger().user_addsudo(user_id)
+            msg = DbManager().user_addsudo(user_id)
             SUDO_USERS.add(user_id)
         else:
             SUDO_USERS.add(user_id)
@@ -147,7 +147,7 @@ def removeSudo(update, context):
     elif reply_message:
         user_id = reply_message.from_user.id
     if user_id and user_id in SUDO_USERS:
-        msg = DbManger().user_rmsudo(user_id) if DB_URI is not None else 'Demoted'
+        msg = DbManager().user_rmsudo(user_id) if DB_URI is not None else 'Demoted'
         SUDO_USERS.remove(user_id)
     else:
         msg = "Give ID or Reply To message of whom you want to remove from Sudo"
