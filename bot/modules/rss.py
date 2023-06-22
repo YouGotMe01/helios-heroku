@@ -3,6 +3,7 @@ import psycopg2
 import cloudscraper
 import re
 import feedparser
+import time
 from bs4 import BeautifulSoup
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
