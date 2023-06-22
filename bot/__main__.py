@@ -173,14 +173,14 @@ def main():
     start_cleanup()
     notifier_dict = False
     if INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
-        if notifier_dict := DbManger().get_incomplete_tasks():
+        if notifier_dict := DbManager().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 if ospath.isfile(".restartmsg"):
                     with open(".restartmsg") as f:
                         chat_id, msg_id = map(int, f)
                     msg = 'Restarted Successfully!'
                 else:
-                    msg = 'Bot Restarted!'
+                    msg = 💥'Bot Restarted!'
                 for tag, links in data.items():
                      msg += f"\n\n{tag}: "
                      for index, link in enumerate(links, start=1):
