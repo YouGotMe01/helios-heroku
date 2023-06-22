@@ -51,7 +51,7 @@ class MirrorLeechListener:
 
     def onDownloadStart(self):
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
-            DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
+            DbManager().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
     def onDownloadComplete(self):
         with download_dict_lock:
