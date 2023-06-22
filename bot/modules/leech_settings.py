@@ -8,7 +8,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, ed
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper import button_build
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 
 
 def getleechinfo(from_user):
@@ -65,7 +65,7 @@ def setLeechType(update, context):
             AS_MEDIA_USERS.remove(user_id)
         AS_DOC_USERS.add(user_id)
         if DB_URI is not None:
-            DbManger().user_doc(user_id)
+            DbManager().user_doc(user_id)
         query.answer(text="Your File Will Deliver As Document!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "med":
@@ -73,7 +73,7 @@ def setLeechType(update, context):
             AS_DOC_USERS.remove(user_id)
         AS_MEDIA_USERS.add(user_id)
         if DB_URI is not None:
-            DbManger().user_media(user_id)
+            DbManager().user_media(user_id)
         query.answer(text="Your File Will Deliver As Media!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "thumb":
@@ -81,7 +81,7 @@ def setLeechType(update, context):
         if ospath.lexists(path):
             osremove(path)
             if DB_URI is not None:
-                DbManger().user_rm_thumb(user_id, path)
+                DbManager().user_rm_thumb(user_id, path)
             query.answer(text="Thumbnail Removed!", show_alert=True)
             editLeechType(message, query)
         else:
@@ -106,7 +106,7 @@ def setThumb(update, context):
         Image.open(photo_dir).convert("RGB").save(des_dir, "JPEG")
         osremove(photo_dir)
         if DB_URI is not None:
-            DbManger().user_save_thumb(user_id, des_dir)
+            DbManager().user_save_thumb(user_id, des_dir)
         msg = f"Custom thumbnail saved for {update.message.from_user.mention_html(update.message.from_user.first_name)}."
         sendMessage(msg, context.bot, update.message)
     else:
