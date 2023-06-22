@@ -16,12 +16,8 @@ from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendLogFile
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.db_handler import DbManager
 
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, delete, count, leech_settings, search, rss, bt_select, sleep, scraper
-
-
-
 from .helper.ext_utils.telegraph_helper import telegraph
 
 def stats(update, context):
