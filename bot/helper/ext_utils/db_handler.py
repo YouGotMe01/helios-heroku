@@ -1,3 +1,4 @@
+import os
 from os import path as ospath, makedirs
 from psycopg2 import connect, DatabaseError
 
