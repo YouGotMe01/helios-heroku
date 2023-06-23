@@ -191,7 +191,8 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-
+            
+DATABASE_URL = os.environ.get('DATABASE_URL')
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
