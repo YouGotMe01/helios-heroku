@@ -273,9 +273,8 @@ def rss_monitor(context):
                     feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
                 time.sleep(5)
-
-            if db_manager is not None:
-                db_manager.rss_update(name, str(last_link), str(last_title))
+           
+            db_manager.rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
