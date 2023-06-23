@@ -18,6 +18,7 @@ from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
+magnets = set()
 
 def rss_list(update, context):
     if len(rss_dict) > 0:
@@ -221,7 +222,7 @@ if DATABASE_URL is not None:
 else:
     db_manager = None
     
-magnets = set()
+
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
