@@ -245,10 +245,16 @@ def rss_monitor(context):
             rss_job.enabled = False
             return
         rss_saver = rss_dict.copy()
-
+        
+    processed_urls = set()
+    
     for name, data in rss_saver.items():
         try:
             rss_d = feedparser.parse(data[0])
+            
+            if entry_link in processed_urls:
+                continue
+            processed_urls.add(entry_link)
             
             if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
@@ -309,12 +315,14 @@ def rss_monitor(context):
                 feed_msg += f"<b>Link: </b><code>{url}</code>"
             time.sleep(5)
        
-        db_manager.rss_update(name, str(last_link), str(last_title))
-        with rss_dict_lock:
-            rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
-        LOGGER.info(f"Feed Name: {name}")
-        LOGGER.info(f"Last item: {last_link}")
-
+            try:
+                db_manager.rss_update(name, str(last_link), str(last_title))
+                with rss_dict_lock:
+                    rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
+                LOGGER.info(f"Feed Name: {name}")
+                LOGGER.info(f"Last item: {last_link}")
+            except Exception as e:
+                LOGGER.error(f"Error updating RSS feed: {e}")
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
