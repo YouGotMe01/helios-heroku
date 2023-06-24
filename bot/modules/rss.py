@@ -248,8 +248,8 @@ def rss_monitor(context):
         rss_saver = rss_dict.copy()
 
     for name, data in rss_saver.items():
-    try:
-        rss_d = feedparser.parse(data[0])
+        try:
+            rss_d = feedparser.parse(data[0])
         if not rss_d.entries:
             LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
             continue
