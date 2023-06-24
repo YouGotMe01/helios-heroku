@@ -241,8 +241,8 @@ else:
     
 def rss_monitor(context):
     with rss_dict_lock:
-        if len(rss_dict) == 0:
-            rss_job.enabled = False
+    if len(rss_dict) == 0:
+        rss_job.enabled = False
         return
     rss_saver = rss_dict.copy()
 
@@ -307,9 +307,9 @@ for name, data in rss_saver.items():
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
             LOGGER.info(f"Last item: {last_link}")
-        
+
         time.sleep(5) # Delay between processing each feed item
-        
+
     except Exception as e:
         LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
         continue
