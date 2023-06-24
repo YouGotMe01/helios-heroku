@@ -257,11 +257,6 @@ def rss_monitor(context):
                 except (IndexError, KeyError):
                     url = entry.get('link')
 
-                if url in magnets:
-                    continue
-                else:
-                    magnets.add(url)
-
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
@@ -269,6 +264,10 @@ def rss_monitor(context):
                     soup4 = BeautifulSoup(lmno, 'html.parser')
                     for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}): 
                         url = pqrs.get('href')
+                        if url in magnets:
+                            continue
+                        else:
+                            magnets.add(url)
                     feed_msg = f"/{RSS_COMMAND} {url}"
                     sendRss(feed_msg, context.bot)
                 else:
