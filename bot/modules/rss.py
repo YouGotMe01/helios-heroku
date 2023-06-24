@@ -241,8 +241,8 @@ else:
     
 def rss_monitor(context):
     with rss_dict_lock:
-    if len(rss_dict) == 0:
-        rss_job.enabled = False
+        if len(rss_dict) == 0:
+            rss_job.enabled = False
         return
     rss_saver = rss_dict.copy()
 
