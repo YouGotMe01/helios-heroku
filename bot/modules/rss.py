@@ -246,6 +246,7 @@ def rss_monitor(context):
             rss_job.enabled = False
             return
         rss_saver = rss_dict.copy()
+
     for name, data in rss_saver.items():
         try:
             rss_d = feedparser.parse(data[0])
@@ -261,9 +262,13 @@ def rss_monitor(context):
             for entry in rss_d.entries:
                 entry_link = entry['link']
                 entry_title = entry['title']
-                
+
                 if data[1] == entry_link or data[2] == entry_title:
                     break
+
+                if entry_link in processed_urls:  # Check if the entry's URL has been processed before
+                    continue
+                processed_urls.add(entry_link)  # Add the entry's URL to the set of processed URLs
 
                 parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
                 if not parse:
@@ -273,6 +278,10 @@ def rss_monitor(context):
                     url = entry['links'][1]['href']
                 except (IndexError, KeyError):
                     url = entry.get('link')
+                    
+        finally:
+            with rss_dict_lock:
+                rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
 
                 if RSS_COMMAND is not None:
                     hijk = url
