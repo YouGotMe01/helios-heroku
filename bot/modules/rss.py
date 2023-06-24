@@ -289,40 +289,34 @@ def rss_monitor(context):
                 except (IndexError, KeyError):
                     url = entry.get('link')
                 
-        except Exception as e:
-            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
-            continue
-
-        finally:
-            with rss_dict_lock:
-                rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
-
-            if RSS_COMMAND is not None:
-                hijk = url
-                scraper = cloudscraper.create_scraper(allow_brotli=False)
-                lmno = scraper.get(hijk).text 
-                soup4 = BeautifulSoup(lmno, 'html.parser')
-                for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}): 
-                    url = pqrs.get('href')
-                    if url in magnets:
-                        continue
-                    else:
-                        magnets.add(url)
-                feed_msg = f"/{RSS_COMMAND} {url}"
-                sendRss(feed_msg, context.bot)
-            else:
-                feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
-                feed_msg += f"<b>Link: </b><code>{url}</code>"
-            time.sleep(5)
+                # Rest of your code...
+                if RSS_COMMAND is not None:
+                    hijk = url
+                    scraper = cloudscraper.create_scraper(allow_brotli=False)
+                    lmno = scraper.get(hijk).text 
+                    soup4 = BeautifulSoup(lmno, 'html.parser')
+                    for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}): 
+                        url = pqrs.get('href')
+                        if url in magnets:
+                            continue
+                        else:
+                            magnets.add(url)
+                    feed_msg = f"/{RSS_COMMAND} {url}"
+                    sendRss(feed_msg, context.bot)
+                else:
+                    feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"
+                time.sleep(5)
        
-            db_manager.rss_update(name, str(last_link), str(last_title))
-            with rss_dict_lock:
-                rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
-            LOGGER.info(f"Feed Name: {name}")
-            LOGGER.info(f"Last item: {last_link}")
+                db_manager.rss_update(name, str(last_link), str(last_title))
+                with rss_dict_lock:
+                    rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
+                LOGGER.info(f"Feed Name: {name}")
+                LOGGER.info(f"Last item: {last_link}")
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
