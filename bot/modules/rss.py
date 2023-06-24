@@ -239,7 +239,6 @@ if DATABASE_URL is not None:
 else:
     db_manager = None
     
-
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -251,47 +250,46 @@ def rss_monitor(context):
         try:
             rss_d = feedparser.parse(data[0])
             
-        if not rss_d.entries:
-            LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
-    # Add your desired actions or code here
-    # For example:
-            print("No entries found in the RSS feed")
-    # Or any other actions you want to perform
-            continue
-
+            if not rss_d.entries:
+                LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
+                # Add your desired actions or code here
+                # For example:
+                print("No entries found in the RSS feed")
+                # Or any other actions you want to perform
+                continue
 
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
-        if data[1] == last_link or data[2] == last_title:
+            if data[1] == last_link or data[2] == last_title:
+                continue
+
+            for entry in rss_d.entries:
+                entry_link = entry['link']
+                entry_title = entry['title']
+
+                if data[1] == entry_link or data[2] == entry_title:
+                    break
+
+                if entry_link in processed_urls:  # Check if the entry's URL has been processed before
+                    continue
+                processed_urls.add(entry_link)  # Add the entry's URL to the set of processed URLs
+
+                parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
+                if not parse:
+                    continue
+
+                try:
+                    url = entry['links'][1]['href']
+                except (IndexError, KeyError):
+                    url = entry.get('link')
+                
+        except Exception as e:
+            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
 
-        for entry in rss_d.entries:
-            entry_link = entry['link']
-            entry_title = entry['title']
-
-            if data[1] == entry_link or data[2] == entry_title:
-                break
-
-            if entry_link in processed_urls:  # Check if the entry's URL has been processed before
-                continue
-            processed_urls.add(entry_link)  # Add the entry's URL to the set of processed URLs
-
-            parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
-            if not parse:
-                continue
-
-            try:
-                url = entry['links'][1]['href']
-            except (IndexError, KeyError):
-                url = entry.get('link')
-                
-    except Exception as e:
-        LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
-        continue
-
-    finally:
-        with rss_dict_lock:
-            rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
+        finally:
+            with rss_dict_lock:
+                rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
 
             if RSS_COMMAND is not None:
                 hijk = url
