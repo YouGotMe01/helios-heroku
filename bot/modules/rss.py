@@ -251,11 +251,11 @@ def rss_monitor(context):
     for name, data in rss_saver.items():
         try:
             rss_d = feedparser.parse(data[0])
-            
-            if entry_link in processed_urls:
+            last_link = rss_d.entries[0]['link']
+            last_title = rss_d.entries[0]['title']
+            if data[1] == last_link or data[2] == last_title:
                 continue
-            processed_urls.add(entry_link)
-            
+   
             if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
                 # Add your desired actions or code here
@@ -263,12 +263,7 @@ def rss_monitor(context):
                 print("No entries found in the RSS feed")
                 # Or any other actions you want to perform
                 continue
-
-            last_link = rss_d.entries[0]['link']
-            last_title = rss_d.entries[0]['title']
-            if data[1] == last_link or data[2] == last_title:
-                continue
-
+                
             for entry in rss_d.entries:
                 entry_link = entry['link']
                 entry_title = entry['title']
@@ -276,9 +271,9 @@ def rss_monitor(context):
                 if data[1] == entry_link or data[2] == entry_title:
                     break
 
-                if entry_link in processed_urls:  # Check if the entry's URL has been processed before
+                if entry_link in processed_urls: 
                     continue
-                processed_urls.add(entry_link)  # Add the entry's URL to the set of processed URLs
+                processed_urls.add(entry_link) 
 
                 parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
                 if not parse:
