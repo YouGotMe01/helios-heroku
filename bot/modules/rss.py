@@ -254,8 +254,8 @@ def rss_monitor(context):
             LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
             continue
 
-        last_link = rss_d.entries[0]['link']
-        last_title = rss_d.entries[0]['title']
+            last_link = rss_d.entries[0]['link']
+            last_title = rss_d.entries[0]['title']
         if data[1] == last_link or data[2] == last_title:
             continue
 
