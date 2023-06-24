@@ -18,7 +18,6 @@ from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper import button_build
 
 rss_dict_lock = Lock()
-magnets = set()
 
 def rss_list(update, context):
     if len(rss_dict) > 0:
@@ -241,10 +240,10 @@ else:
     
 def rss_monitor(context):
     with rss_dict_lock:
-    if len(rss_dict) == 0:
-        rss_job.enabled = False
-        return
-    rss_saver = rss_dict.copy()
+        if len(rss_dict) == 0:
+            rss_job.enabled = False
+            return
+        rss_saver = rss_dict.copy()
 
 processed_urls = set()
 
