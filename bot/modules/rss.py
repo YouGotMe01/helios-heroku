@@ -241,77 +241,78 @@ else:
     
 def rss_monitor(context):
     with rss_dict_lock:
-        if len(rss_dict) == 0:
-            rss_job.enabled = False
-            return
-        rss_saver = rss_dict.copy()
-        
-    processed_urls = set()
-    
-    for name, data in rss_saver.items():
-        try:
-            rss_d = feedparser.parse(data[0])
-            last_link = rss_d.entries[0]['link']
-            last_title = rss_d.entries[0]['title']
-            if data[1] == last_link or data[2] == last_title:
-                continue
-   
-            if not rss_d.entries:
-                LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
-                # Add your desired actions or code here
-                # For example:
-                print("No entries found in the RSS feed")
-                # Or any other actions you want to perform
-                continue
-                
-            for entry in rss_d.entries:
-                entry_link = entry['link']
-                entry_title = entry['title']
+    if len(rss_dict) == 0:
+        rss_job.enabled = False
+        return
+    rss_saver = rss_dict.copy()
 
-                if data[1] == entry_link or data[2] == entry_title:
-                    break
+processed_urls = set()
 
-                if entry_link in processed_urls: 
-                    continue
-                processed_urls.add(entry_link) 
-
-                parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
-                if not parse:
-                    continue
-
-                try:
-                    url = entry['links'][1]['href']
-                except (IndexError, KeyError):
-                    url = entry.get('link')
-                
-                # Rest of your code...
-                if RSS_COMMAND is not None:
-                    hijk = url
-                    scraper = cloudscraper.create_scraper(allow_brotli=False)
-                    lmno = scraper.get(hijk).text 
-                    soup4 = BeautifulSoup(lmno, 'html.parser')
-                    for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}): 
-                        url = pqrs.get('href')
-                        if url in magnets:
-                            continue
-                        else:
-                            magnets.add(url)
-                    feed_msg = f"/{RSS_COMMAND} {url}"
-                    sendRss(feed_msg, context.bot)
-                else:
-                    feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"
-                time.sleep(5)
-       
-                db_manager.rss_update(name, str(last_link), str(last_title))
-                with rss_dict_lock:
-                    rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
-                LOGGER.info(f"Feed Name: {name}")
-                LOGGER.info(f"Last item: {last_link}")
-        except Exception as e:
-            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+for name, data in rss_saver.items():
+    try:
+        rss_d = feedparser.parse(data[0])
+        last_link = rss_d.entries[0]['link']
+        last_title = rss_d.entries[0]['title']
+        if data[1] == last_link or data[2] == last_title:
             continue
 
+        if not rss_d.entries:
+            LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
+            # Add your desired actions or code here
+            # For example:
+            print("No entries found in the RSS feed")
+            # Or any other actions you want to perform
+            continue
+
+        for entry in rss_d.entries:
+            entry_link = entry['link']
+            entry_title = entry['title']
+
+            if data[1] == entry_link or data[2] == entry_title:
+                break
+
+            if entry_link in processed_urls:
+                continue
+            processed_urls.add(entry_link)
+
+            parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
+            if not parse:
+                continue
+
+            try:
+                url = entry['links'][1]['href']
+            except (IndexError, KeyError):
+                url = entry.get('link')
+
+            # Rest of your code...
+            if RSS_COMMAND is not None:
+                hijk = url
+                scraper = cloudscraper.create_scraper(allow_brotli=False)
+                lmno = scraper.get(hijk).text 
+                soup4 = BeautifulSoup(lmno, 'html.parser')
+                for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}): 
+                    url = pqrs.get('href')
+                    if url in magnets:
+                        continue
+                    else:
+                        magnets.add(url)
+                feed_msg = f"/{RSS_COMMAND} {url}"
+                sendRss(feed_msg, context.bot)
+            else:
+                feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
+                feed_msg += f"<b>Link: </b><code>{url}</code>"
+
+            db_manager.rss_update(name, str(last_link), str(last_title))
+            with rss_dict_lock:
+                rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
+            LOGGER.info(f"Feed Name: {name}")
+            LOGGER.info(f"Last item: {last_link}")
+        
+        time.sleep(5) # Delay between processing each feed item
+        
+    except Exception as e:
+        LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+        continue
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
