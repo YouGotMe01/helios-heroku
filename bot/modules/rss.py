@@ -250,9 +250,15 @@ def rss_monitor(context):
     for name, data in rss_saver.items():
         try:
             rss_d = feedparser.parse(data[0])
+            
         if not rss_d.entries:
             LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
+    # Add your desired actions or code here
+    # For example:
+            print("No entries found in the RSS feed")
+    # Or any other actions you want to perform
             continue
+
 
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
