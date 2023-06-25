@@ -207,14 +207,8 @@ class DbManager:
     def create_table(self):
         with self.conn.cursor() as cur:
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS rss_data (
-                  id SERIAL PRIMARY KEY,
-                  name TEXT,
-                  last_link TEXT,
-                  last_title TEXT
-                )
-            """)
-
+                CREATE TABLE IF NOT EXISTS rss_data (id SERIAL PRIMARY KEY, name TEXT, last_link TEXT, last_title TEXT)""")
+                  
     def __enter__(self):
         return self.conn.cursor()
 
@@ -237,7 +231,7 @@ if DATABASE_URL is not None:
     db_manager = DbManager(DATABASE_URL)
 else:
     db_manager = None
-    
+
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -257,10 +251,7 @@ def rss_monitor(context):
 
                 if not rss_d.entries:
                     LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
-                    # Add your desired actions or code here
-                    # For example:
                     print("No entries found in the RSS feed")
-                    # Or any other actions you want to perform
                     continue
 
                 for entry in rss_d.entries:
@@ -283,7 +274,6 @@ def rss_monitor(context):
                     except (IndexError, KeyError):
                         url = entry.get('link')
 
-                    # Rest of your code...
                     if RSS_COMMAND is not None:
                         hijk = url
                         scraper = cloudscraper.create_scraper(allow_brotli=False)
@@ -307,7 +297,7 @@ def rss_monitor(context):
                     LOGGER.info(f"Feed Name: {name}")
                     LOGGER.info(f"Last item: {last_link}")
 
-                time.sleep(5)  # Delay between processing each feed item
+                time.sleep(5) 
 
             except Exception as e:
                 LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
