@@ -274,19 +274,24 @@ def rss_monitor(context):
                     except (IndexError, KeyError):
                         url = entry.get('link')
                         
+  
                     magnets = set()
+
                     if RSS_COMMAND is not None:
                         hijk = url
                         scraper = cloudscraper.create_scraper(allow_brotli=False)
-                        lmno = scraper.get(hijk).text 
+                        lmno = scraper.get(hijk).text
                         soup4 = BeautifulSoup(lmno, 'html.parser')
-                        for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}): 
+
+                        for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}):
                             url = pqrs.get('href')
-                            if url in magnets:
-                                continue
-                            else:
-                                magnets.add(url)
-                        feed_msg = f"/{RSS_COMMAND} {url}"
+                            title = entry_title.replace('>', '').replace('<', '')
+
+                            if (url, title) not in magnets:
+                            magnets.add((url, title))
+
+                        for magnet, title in magnets:
+                        feed_msg = f"/{RSS_COMMAND} {magnet}"
                         sendRss(feed_msg, context.bot)
                     else:
                         feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
@@ -298,7 +303,7 @@ def rss_monitor(context):
                     LOGGER.info(f"Feed Name: {name}")
                     LOGGER.info(f"Last item: {last_link}")
 
-                time.sleep(5) 
+                    time.sleep(5) 
 
             except Exception as e:
                 LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
