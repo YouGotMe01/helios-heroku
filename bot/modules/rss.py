@@ -291,8 +291,8 @@ def rss_monitor(context):
                                 magnets.add((url, title))
 
                         for magnet, title in magnets:
-                        feed_msg = f"/{RSS_COMMAND} {magnet}"
-                        sendRss(feed_msg, context.bot)
+                            feed_msg = f"/{RSS_COMMAND} {magnet}"
+                            sendRss(feed_msg, context.bot)
                     else:
                         feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
                         feed_msg += f"<b>Link: </b><code>{url}</code>"
