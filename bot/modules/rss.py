@@ -36,7 +36,7 @@ def rss_get(update, context):
         if feed_url is not None and count > 0:
             try:
                 msg = sendMessage(f"Getting the last <b>{count}</b> item(s) from {title}", context.bot, update.message)
-                rss_d = feedparser.parse(feed_url[0])
+                rss_d = feedparse(feed_url[0])
                 item_info = ""
                 for item_num in range(count):
                     try:
