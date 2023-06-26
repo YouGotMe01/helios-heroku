@@ -288,7 +288,7 @@ def rss_monitor(context):
                             title = entry_title.replace('>', '').replace('<', '')
 
                             if (url, title) not in magnets:
-                            magnets.add((url, title))
+                                magnets.add((url, title))
 
                         for magnet, title in magnets:
                         feed_msg = f"/{RSS_COMMAND} {magnet}"
