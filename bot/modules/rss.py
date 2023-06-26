@@ -275,23 +275,23 @@ def rss_monitor(context):
                         url = entry.get('link')
                         
   
-                    magnets = set()
-
                     if RSS_COMMAND is not None:
                         hijk = url
                         scraper = cloudscraper.create_scraper(allow_brotli=False)
                         lmno = scraper.get(hijk).text
                         soup4 = BeautifulSoup(lmno, 'html.parser')
 
+                        magnets = set()
+
                         for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}):
-                            url = pqrs.get('href')
+                            magnet_url = pqrs.get('href')
                             title = entry_title.replace('>', '').replace('<', '')
 
-                            if (url, title) not in magnets:
-                                magnets.add((url, title))
+                            if (magnet_url, title) not in magnets:
+                                magnets.add((magnet_url, title))
 
-                        for magnet, title in magnets:
-                            feed_msg = f"/{RSS_COMMAND} {magnet}"
+                        for magnet_url, title in magnets:
+                            feed_msg = f"/{RSS_COMMAND} {magnet_url}"
                             sendRss(feed_msg, context.bot)
                     else:
                         feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
