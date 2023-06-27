@@ -239,14 +239,14 @@ def rss_monitor(context):
             return
         rss_saver = rss_dict.copy()
 
+        processed_urls = set()
+
         for name, data in rss_saver.items():
             try:
                 rss_d = feedparser.parse(data[0])
                 if not rss_d.entries:
                     LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
                     continue
-
-                processed_urls = set(data[4])  # Retrieve the set of processed URLs
 
                 for entry in rss_d.entries:
                     entry_link = entry['link']
@@ -257,15 +257,13 @@ def rss_monitor(context):
 
                     if entry_link in processed_urls:
                         continue
+                    processed_urls.add(entry_link)
 
                     parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
                     if not parse:
                         continue
 
-                    try:
-                        url = entry['links'][1]['href']
-                    except (IndexError, KeyError):
-                        url = entry.get('link')
+                    url = entry['links'][1]['href'] if len(entry['links']) > 1 else entry.get('link')
 
                     if RSS_COMMAND is not None:
                         hijk = url
@@ -291,13 +289,11 @@ def rss_monitor(context):
 
                     db_manager.rss_update(name, entry_link, entry_title)
                     with rss_dict_lock:
-                        rss_dict[name] = [data[0], entry_link, entry_title, data[3], list(processed_urls)]  # Update the processed URLs
+                        rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
                     LOGGER.info(f"Feed Name: {name}")
                     LOGGER.info(f"Last item: {entry_link}")
 
                     time.sleep(5)
-
-                    processed_urls.add(entry_link)  # Add the processed URL to the set
 
             except Exception as e:
                 LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
