@@ -324,5 +324,11 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     dispatcher.add_handler(rss_unsub_handler)
     dispatcher.add_handler(rss_settings_handler)
     dispatcher.add_handler(rss_buttons_handler)
-    rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS")
-    rss_job.enabled = True
+
+    rss_jobs = job_queue.get_jobs_by_name("RSS")
+    if len(rss_jobs) > 0 and rss_jobs[0].enabled:
+        
+    else:
+        rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS")
+        rss_job.enabled = True
+    
