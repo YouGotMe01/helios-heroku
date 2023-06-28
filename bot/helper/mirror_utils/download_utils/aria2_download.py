@@ -123,9 +123,9 @@ def __onBtDownloadComplete(api, gid):
             res = download.files
             for file_o in res:
                 f_path = file_o.path
-                if not file_o.selected and ospath.exists(f_path):
+                if not file_o.selected and os.path.exists(f_path):
                     try:
-                        remove(f_path)
+                        os.remove(f_path)
                     except:
                         pass
             clean_unwanted(download.dir)
