@@ -231,75 +231,94 @@ if DATABASE_URL is not None:
     db_manager = DbManager(DATABASE_URL)
 else:
     db_manager = None
+    
+class JobSemaphore:
+    def __init__(self, max_instances):
+        self.max_instances = max_instances
+        self.current_instances = 0
+
+    def acquire(self):
+        while self.current_instances >= self.max_instances:
+            time.sleep(1)
+        self.current_instances += 1
+
+    def release(self):
+        self.current_instances -= 1
+
+max_rss_instances = 1  # Adjust the maximum number of allowed instances as needed
+rss_semaphore = JobSemaphore(max_rss_instances)
 
 def rss_monitor(context):
-    with rss_dict_lock:
-        if len(rss_dict) == 0:
-            rss_job.enabled = False
-            return
-        rss_saver = rss_dict.copy()
+    rss_semaphore.acquire()
+    try:
+        with rss_dict_lock:
+            if len(rss_dict) == 0:
+                rss_job.enabled = False
+                return
+            rss_saver = rss_dict.copy()
 
-        processed_urls = set()
+            processed_urls = set()
 
-        for name, data in rss_saver.items():
-            try:
-                rss_d = feedparser.parse(data[0])
-                if not rss_d.entries:
-                    LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
+            for name, data in rss_saver.items():
+                try:
+                    rss_d = feedparser.parse(data[0])
+                    if not rss_d.entries:
+                        LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
+                        continue
+
+                    for entry in rss_d.entries:
+                        entry_link = entry['link']
+                        entry_title = entry['title']
+
+                        if entry_link == data[1] and entry_title == data[2]:
+                            break
+
+                        if entry_link in processed_urls:
+                            continue
+                        processed_urls.add(entry_link)
+
+                        parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
+                        if not parse:
+                            continue
+
+                        url = entry['links'][1]['href'] if len(entry['links']) > 1 else entry.get('link')
+
+                        if RSS_COMMAND is not None:
+                            hijk = url
+                            scraper = cloudscraper.create_scraper(allow_brotli=False)
+                            lmno = scraper.get(hijk).text
+                            soup4 = BeautifulSoup(lmno, 'html.parser')
+
+                            magnets = set()
+
+                            for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}):
+                                magnet_url = pqrs.get('href')
+                                title = entry_title.replace('>', '').replace('<', '')
+
+                                if (magnet_url, title) not in magnets:
+                                    magnets.add((magnet_url, title))
+
+                            for magnet_url, title in magnets:
+                                feed_msg = f"/{RSS_COMMAND} {magnet_url}"
+                                sendRss(feed_msg, context.bot)
+                        else:
+                            feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
+                            feed_msg += f"<b>Link: </b><code>{url}</code>"
+
+                        db_manager.rss_update(name, entry_link, entry_title)
+                        with rss_dict_lock:
+                            rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
+                        LOGGER.info(f"Feed Name: {name}")
+                        LOGGER.info(f"Last item: {entry_link}")
+
+                        time.sleep(5)
+
+                except Exception as e:
+                    LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
                     continue
-
-                for entry in rss_d.entries:
-                    entry_link = entry['link']
-                    entry_title = entry['title']
-
-                    if entry_link == data[1] and entry_title == data[2]:
-                        break
-
-                    if entry_link in processed_urls:
-                        continue
-                    processed_urls.add(entry_link)
-
-                    parse = all(any(x in entry_title.lower() for x in item) for item in data[3])
-                    if not parse:
-                        continue
-
-                    url = entry['links'][1]['href'] if len(entry['links']) > 1 else entry.get('link')
-
-                    if RSS_COMMAND is not None:
-                        hijk = url
-                        scraper = cloudscraper.create_scraper(allow_brotli=False)
-                        lmno = scraper.get(hijk).text
-                        soup4 = BeautifulSoup(lmno, 'html.parser')
-
-                        magnets = set()
-
-                        for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}):
-                            magnet_url = pqrs.get('href')
-                            title = entry_title.replace('>', '').replace('<', '')
-
-                            if (magnet_url, title) not in magnets:
-                                magnets.add((magnet_url, title))
-
-                        for magnet_url, title in magnets:
-                            feed_msg = f"/{RSS_COMMAND} {magnet_url}"
-                            sendRss(feed_msg, context.bot)
-                    else:
-                        feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
-                        feed_msg += f"<b>Link: </b><code>{url}</code>"
-
-                    db_manager.rss_update(name, entry_link, entry_title)
-                    with rss_dict_lock:
-                        rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
-                    LOGGER.info(f"Feed Name: {name}")
-                    LOGGER.info(f"Last item: {entry_link}")
-
-                    time.sleep(5)
-
-            except Exception as e:
-                LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
-                continue
-
-
+    finally:
+        rss_semaphore.release()
+      
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
@@ -319,6 +338,6 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     if len(rss_jobs) > 0 and rss_jobs[0].enabled:
         pass # Job is already running, no specific action neede        
     else:
-        rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS")
+        rss_job = job_queue.run_repeating(lambda context: rss_monitor(context), interval=RSS_DELAY, first=20, name="RSS", context=rss_semaphore)
         rss_job.enabled = True
     
