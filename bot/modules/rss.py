@@ -310,7 +310,7 @@ def rss_monitor(context):
                         with rss_dict_lock:
                             rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
                         LOGGER.info(f"Feed Name: {name}")
-                        LOGGER.info(f"Last item: {entry_link}"
+                        LOGGER.info(f"Last item: {entry_link}")
 
                 except Exception as e:
                     LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
