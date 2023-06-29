@@ -246,11 +246,7 @@ class JobSemaphore:
         self.current_instances -= 1
 
 max_rss_instances = 1  # Adjust the maximum number of allowed instances as needed
-rss_semaphore = JobSemaphore(max_rss_instances)
-
-# Define a dictionary to store the last processed entry for each feed
-last_processed_entry = {}
-process_new_feeds = True
+rss_semaphore = JobSemaphore(max_rss_instance)
 
 def rss_monitor(context):
     rss_semaphore.acquire()
@@ -322,8 +318,12 @@ def rss_monitor(context):
                         db_manager.rss_update(name, entry_link, entry_title)
                         with rss_dict_lock:
                             rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
-                        LOGGER.info(f"Feed Name: {name}")
-                        LOGGER.info(f"Last item: {entry_link}")
+
+                    # Update the feed URL in the rss_dict with the new URL
+                    rss_dict[name][0] = data[0]
+
+                    LOGGER.info(f"Feed Name: {name}")
+                    LOGGER.info(f"Last item: {entry_link}")
 
                     # Update the last processed entry for the feed with the link of the latest entry
                     if rss_d.entries:
@@ -334,7 +334,8 @@ def rss_monitor(context):
                     LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
                     continue
     finally:
-        rss_semaphore.release()    
+        rss_semaphore.release()
+
         
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
