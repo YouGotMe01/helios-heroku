@@ -246,7 +246,7 @@ class JobSemaphore:
         self.current_instances -= 1
 
 max_rss_instances = 1  # Adjust the maximum number of allowed instances as needed
-rss_semaphore = JobSemaphore(max_rss_instance)
+rss_semaphore = JobSemaphore(max_rss_instances)
 
 def rss_monitor(context):
     rss_semaphore.acquire()
