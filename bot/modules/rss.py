@@ -36,7 +36,7 @@ def rss_get(update, context):
         if feed_url is not None and count > 0:
             try:
                 msg = sendMessage(f"Getting the last <b>{count}</b> item(s) from {title}", context.bot, update.message)
-                rss_d = feedparse(feed_url[0])
+                rss_d = feedparser.parse(feed_url[0])
                 item_info = ""
                 for item_num in range(count):
                     try:
@@ -82,7 +82,7 @@ def rss_sub(update, context):
             LOGGER.error("This title already subscribed! Choose another title!")
             return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
         try:
-            rss_d = feedparse(feed_link)
+            rss_d = feedparser.parse(feed_link)
             sub_msg = "<b>Subscribed!</b>"
             sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed Url: </b>{feed_link}"
             sub_msg += f"\n\n<b>latest record for </b>{rss_d.feed.title}:"
