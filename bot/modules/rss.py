@@ -218,13 +218,18 @@ class DbManager:
         self.conn.close()
 
     def rss_update(self, name, last_link, last_title):
-        with self.__enter__() as cur:
-            try:
+    with self.__enter__() as cur:
+        try:
+            cur.execute("SELECT * FROM rss_data WHERE name = %s", (name,))
+            row = cur.fetchone()
+            if row:
                 cur.execute("UPDATE rss_data SET last_link = %s, last_title = %s WHERE name = %s", (last_link, last_title, name))
-            except DatabaseError as error:
-                self.conn.rollback()
-                LOGGER.error(f"Error in rss_update: {error}")
-                print(error)
+            else:
+                cur.execute("INSERT INTO rss_data (name, last_link, last_title) VALUES (%s, %s, %s)", (name, last_link, last_title))
+        except DatabaseError as error:
+            self.conn.rollback()
+            LOGGER.error(f"Error in rss_update: {error}")
+            print(error)
 
 
 if DATABASE_URL is not None:
