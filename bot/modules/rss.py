@@ -233,11 +233,13 @@ class DbManager:
                 LOGGER.error(f"Error in rss_update: {error}")
                 print(error)
 
+    def get_connection(self):
+        return psycopg2.connect(self.db_uri)
+
 if DATABASE_URL is not None:
     db_manager = DbManager(DATABASE_URL)
 else:
     db_manager = None
-
 
 class JobSemaphore:
     def __init__(self, max_instances):
@@ -276,7 +278,7 @@ def rss_monitor(context):
                         continue
 
                     my_last_title = None
-                    with db_manager as cur:
+                    with db_manager.get_connection() as conn, conn.cursor() as cur:
                         cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
                         row = cur.fetchone()
                         if row:
