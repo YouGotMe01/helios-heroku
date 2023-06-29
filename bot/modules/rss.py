@@ -248,6 +248,9 @@ class JobSemaphore:
 max_rss_instances = 1  # Adjust the maximum number of allowed instances as needed
 rss_semaphore = JobSemaphore(max_rss_instances)
 
+# Define a dictionary to store the last processed entry for each feed
+last_processed_entry = {}
+
 def rss_monitor(context):
     rss_semaphore.acquire()
     try:
@@ -266,11 +269,14 @@ def rss_monitor(context):
                         LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
                         continue
 
+                    last_entry_link = last_processed_entry.get(name)
+
                     for entry in rss_d.entries:
                         entry_link = entry['link']
                         entry_title = entry['title']
 
-                        if entry_link == data[1] and entry_title == data[2]:
+                        if entry_link == last_entry_link:
+                            # Reached the last processed entry, no new updates for this feed
                             break
 
                         if entry_link in processed_urls:
@@ -301,23 +307,34 @@ def rss_monitor(context):
                             for magnet_url, title in magnets:
                                 feed_msg = f"/{RSS_COMMAND} {magnet_url}"
                                 sendRss(feed_msg, context.bot)
+
+                            # Update the last processed entry for the feed after the command has been executed successfully
+                            last_processed_entry[name] = entry_link
                         else:
                             feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
                             feed_msg += f"<b>Link: </b><code>{url}</code>"
                             time.sleep(5)
-                        
+
+                            # Update the last processed entry for the feed after the command has been executed successfully
+                            last_processed_entry[name] = entry_link
+
                         db_manager.rss_update(name, entry_link, entry_title)
                         with rss_dict_lock:
                             rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
                         LOGGER.info(f"Feed Name: {name}")
                         LOGGER.info(f"Last item: {entry_link}")
 
+                    # Update the last processed entry for the feed with the link of the latest entry
+                    if rss_d.entries:
+                        last_entry_link = rss_d.entries[0]['link']
+                        last_processed_entry[name] = last_entry_link
+
                 except Exception as e:
                     LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
                     continue
     finally:
-        rss_semaphore.release()
-      
+        rss_semaphore.release()    
+        
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
