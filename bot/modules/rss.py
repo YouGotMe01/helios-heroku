@@ -247,7 +247,6 @@ class JobSemaphore:
 
 max_rss_instances = 1  # Adjust the maximum number of allowed instances as needed
 rss_semaphore = JobSemaphore(max_rss_instances)
-
 def rss_monitor(context):
     rss_semaphore.acquire()
     try:
@@ -258,6 +257,7 @@ def rss_monitor(context):
             rss_saver = rss_dict.copy()
 
             processed_urls = set()
+            last_processed_entry = {}  # Define the last_processed_entry dictionary
 
             for name, data in rss_saver.items():
                 try:
@@ -334,9 +334,7 @@ def rss_monitor(context):
                     LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
                     continue
     finally:
-        rss_semaphore.release()
-
-        
+        rss_semaphore.release()      
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
