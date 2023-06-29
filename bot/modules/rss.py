@@ -250,6 +250,7 @@ rss_semaphore = JobSemaphore(max_rss_instances)
 
 # Define a dictionary to store the last processed entry for each feed
 last_processed_entry = {}
+process_new_feeds = True
 
 def rss_monitor(context):
     rss_semaphore.acquire()
