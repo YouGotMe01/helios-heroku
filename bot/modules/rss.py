@@ -283,6 +283,9 @@ def rss_monitor(context):
                         row = cur.fetchone()
                         if row:
                             my_last_title = row[0]
+                        else:
+                            my_last_title = None
+                        cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], '', ''))
 
                     for entry in rss_d.entries:
                         entry_link = entry['link']
