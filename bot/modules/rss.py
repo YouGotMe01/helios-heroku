@@ -208,7 +208,7 @@ class DbManager:
         with self.conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS rss_data (id SERIAL PRIMARY KEY, name TEXT, last_link TEXT, last_title TEXT)""")
-                  
+
     def __enter__(self):
         return self.conn.cursor()
 
@@ -217,15 +217,17 @@ class DbManager:
         self.conn.cursor().close()
         self.conn.close()
 
-    def rss_update(self, name, last_link, last_title):
+    def rss_update(self, name, url, last_link, last_title):
         with self.__enter__() as cur:
             try:
                 cur.execute("SELECT * FROM rss_data WHERE name = %s", (name,))
                 row = cur.fetchone()
                 if row:
-                    cur.execute("UPDATE rss_data SET last_link = %s, last_title = %s WHERE name = %s", (last_link, last_title, name))
+                    cur.execute("UPDATE rss_data SET url = %s, last_link = %s, last_title = %s WHERE name = %s",
+                                (url, last_link, last_title, name))
                 else:
-                    cur.execute("INSERT INTO rss_data (name, last_link, last_title) VALUES (%s, %s, %s)", (name, last_link, last_title))
+                    cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)",
+                                (name, url, last_link, last_title))
             except DatabaseError as error:
                 self.conn.rollback()
                 LOGGER.error(f"Error in rss_update: {error}")
@@ -236,7 +238,8 @@ if DATABASE_URL is not None:
     db_manager = DbManager(DATABASE_URL)
 else:
     db_manager = None
-    
+
+
 class JobSemaphore:
     def __init__(self, max_instances):
         self.max_instances = max_instances
@@ -250,8 +253,10 @@ class JobSemaphore:
     def release(self):
         self.current_instances -= 1
 
+
 max_rss_instances = 1  # Adjust the maximum number of allowed instances as needed
 rss_semaphore = JobSemaphore(max_rss_instances)
+
 
 def rss_monitor(context):
     rss_semaphore.acquire()
