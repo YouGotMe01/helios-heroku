@@ -3,7 +3,7 @@ import psycopg2
 import cloudscraper
 import re
 import feedparser
-import time
+import datetime
 from bs4 import BeautifulSoup
 from time import sleep
 from psycopg2 import DatabaseError
@@ -210,9 +210,10 @@ class DbManager:
                 CREATE TABLE IF NOT EXISTS rss_data (
                     id SERIAL PRIMARY KEY,
                     name TEXT,
-                    url TEXT,  -- Add the "url" column here
+                    url TEXT,
                     last_link TEXT,
-                    last_title TEXT)""")
+                    last_title TEXT,
+                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
       
     def __enter__(self):
         return self.conn.cursor()
@@ -287,7 +288,15 @@ def rss_monitor(context):
                         """)
                         if not cur.fetchone():
                             db_manager.add_url_column()
+                    last_updated_time = data[4]  # Assuming 'last_updated' is the fifth element in the 'data' list
+                    current_time = datetime.datetime.now()
+                    time_difference = current_time - last_updated_time
 
+                    if time_difference.seconds < 600:  # 600 seconds = 10 minutes (adjust the threshold as needed)
+                        # If the feed has not been updated, log a message or take appropriate action
+                        LOGGER.info(f"No new feed items for feed: {name} - Feed Link: {data[0]}")
+                        continue
+                        
                     rss_d = feedparser.parse(data[0])
                     if not rss_d.entries:
                         LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
