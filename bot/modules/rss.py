@@ -293,7 +293,7 @@ def rss_monitor(context):
                         """)
                         if not cur.fetchone():
                             db_manager.add_url_column()
-                            
+
                     rss_d = feedparser.parse(data[0])
                     if not rss_d.entries:
                         LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
@@ -312,7 +312,7 @@ def rss_monitor(context):
                     for entry in rss_d.entries:
                         entry_link = entry['link']
                         entry_title = entry['title']
-                        if entry_title == my_last_title:       
+                        if entry_title == my_last_title:
                             continue
                         try:
                             db_manager.rss_update(name, entry_link, entry_title, my_last_title)
@@ -321,10 +321,10 @@ def rss_monitor(context):
                             LOGGER.error(str(e))
                             conn.rollback()  # Roll back the transaction
                             continue
-         
+
                         with rss_dict_lock:
                             rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
-                            # Update the feed URL in the rss_dict with the new URL
+                        # Update the feed URL in the rss_dict with the new URL
                         rss_dict[name][0] = data[0]
 
                         magnets = set()
@@ -347,12 +347,7 @@ def rss_monitor(context):
                                 sendRss(feed_msg, context.bot)
                         else:
                             feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
-                            feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
-                            sendRss(feed_msg, context.bot)
-                            
-                        with db_manager.get_connection() as conn, conn.cursor() as cur:
-                            cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], entry_link, entry_title))
-
+                            feed_msg += f"<b>Link: </b><code>{entry
                         LOGGER.info(f"Feed Name: {name}")
                         LOGGER.info(f"Last item: {entry_link}")
                 except Exception as e:
