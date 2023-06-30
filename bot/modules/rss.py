@@ -210,7 +210,7 @@ class DbManager:
                 CREATE TABLE IF NOT EXISTS rss_data (
                     id SERIAL PRIMARY KEY,
                     name TEXT,
-                    url TEXT, , -- Add the "url" column here
+                    url TEXT, -- Add the "url" column here
                     last_link TEXT,
                     last_title TEXT) """)
                     
