@@ -319,11 +319,12 @@ def rss_monitor(context):
                         except Exception as e:
                             LOGGER.error(f"Error updating RSS entry for feed: {name} - Feed Link: {data[0]}")
                             LOGGER.error(str(e))
+                            conn.rollback()  # Roll back the transaction
                             continue
-
+         
                         with rss_dict_lock:
                             rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
-                        # Update the feed URL in the rss_dict with the new URL
+                            # Update the feed URL in the rss_dict with the new URL
                         rss_dict[name][0] = data[0]
 
                         magnets = set()
@@ -355,7 +356,9 @@ def rss_monitor(context):
                         LOGGER.info(f"Feed Name: {name}")
                         LOGGER.info(f"Last item: {entry_link}")
                 except Exception as e:
-                    LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+                    LOGGER.error(f"Error inserting RSS data into the database for feed: {name} - Feed Link: {data[0]}")
+                    LOGGER.error(str(e))
+                    conn.rollback()  # Roll back the transaction
                     continue
     finally:
         rss_semaphore.release()
