@@ -347,7 +347,7 @@ def rss_monitor(context):
                                 sendRss(feed_msg, context.bot)
                         else:
                             feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
-                            feed_msg += f"<b>Link: </b><code>{entry
+                            feed_msg += f"<b>Link: </b><code>{entry_link}</code
                         LOGGER.info(f"Feed Name: {name}")
                         LOGGER.info(f"Last item: {entry_link}")
                 except Exception as e:
