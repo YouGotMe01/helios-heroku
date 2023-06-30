@@ -269,95 +269,74 @@ class JobSemaphore:
 
 max_rss_instances = 1  # Adjust the maximum number of allowed instances as needed
 rss_semaphore = JobSemaphore(max_rss_instances)
+rss_dict_lock = threading.Lock()
 
 def rss_monitor(context):
-    rss_semaphore.acquire()
+    with rss_dict_lock:
+        rss_saver = rss_dict.copy()
+    for name, data in rss_saver.items():
     try:
-        with rss_dict_lock:
-            if len(rss_dict) == 0:
-                rss_job.enabled = False
-                return
-            rss_saver = rss_dict.copy()
-            for name, data in rss_saver.items():
-                try:
-                    if len(data) != 4:
-                        LOGGER.warning(f"Invalid RSS data for feed: {name} - Feed Link: {data[0]}")
-                        continue
+        with db_manager.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
+            row = cur.fetchone()
+            my_last_title = row[0] if row else None
+            cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], '', ''))
 
-                    # Check if the "url" column exists in the table and add it if it's missing
-                    with db_manager.get_connection() as conn, conn.cursor() as cur:
-                        cur.execute("""
-                            SELECT column_name
-                            FROM information_schema.columns
-                            WHERE table_name = 'rss_data' AND column_name = 'url'
-                        """)
-                        if not cur.fetchone():
-                            db_manager.add_url_column()
+            rss_d = feedparser.parse(data[0])
+            if not rss_d.entries:
+                LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
+                continue
 
-                    rss_d = feedparser.parse(data[0])
-                    if not rss_d.entries:
-                        LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
-                        continue
-
-                    my_last_title = None
-                    with db_manager.get_connection() as conn, conn.cursor() as cur:
-                        cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
-                        row = cur.fetchone()
-                        if row:
-                            my_last_title = row[0]
-                        else:
-                            my_last_title = None
-                        cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], '', ''))
-
-                    for entry in rss_d.entries:
-                        entry_link = entry['link']
-                        entry_title = entry['title']
-                        if entry_title == my_last_title:
-                            continue
-                        try:
-                            db_manager.rss_update(name, entry_link, entry_title, my_last_title)
-                        except Exception as e:
-                            LOGGER.error(f"Error updating RSS entry for feed: {name} - Feed Link: {data[0]}")
-                            LOGGER.error(str(e))
-                            conn.rollback()  # Roll back the transaction
-                            continue
-
-                        with rss_dict_lock:
-                            rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
-                        # Update the feed URL in the rss_dict with the new URL
-                        rss_dict[name][0] = data[0]
-
-                        magnets = set()
-                        if RSS_COMMAND is not None:
-                            # Replace 'url' with the appropriate variable or URL to scrape for magnet links
-                            magnet_url = entry_link
-                            scraper = cloudscraper.create_scraper(allow_brotli=False)
-                            html = scraper.get(magnet_url).text
-                            soup = BeautifulSoup(html, 'html.parser')
-
-                            for a_tag in soup.find_all('a', attrs={'href': re.compile(r"^magnet")}):
-                                magnet_url = a_tag.get('href')
-                                title = entry_title.replace('>', '').replace('<', '')
-
-                                if (magnet_url, title) not in magnets:
-                                    magnets.add((magnet_url, title))
-
-                            for magnet_url, title in magnets:
-                                feed_msg = f"/{RSS_COMMAND} {magnet_url}"
-                                sendRss(feed_msg, context.bot)
-                        else:
-                            feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
-                            feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
-                        
-                        LOGGER.info(f"Feed Name: {name}")
-                        LOGGER.info(f"Last item: {entry_link}")
-                except Exception as e:
-                    LOGGER.error(f"Error inserting RSS data into the database for feed: {name} - Feed Link: {data[0]}")
-                    LOGGER.error(str(e))
-                    conn.rollback()  # Roll back the transaction
+            for entry in rss_d.entries:
+                entry_link = entry['link']
+                entry_title = entry['title']
+                if entry_title == my_last_title:
                     continue
-    finally:
-        rss_semaphore.release()
+                try:
+                    db_manager.rss_update(name, entry_link, entry_title, my_last_title)
+                except Exception as e:
+                    LOGGER.error(f"Error updating RSS entry for feed: {name} - Feed Link: {data[0]}")
+                    LOGGER.error(str(e))
+                    continue
+               
+                with rss_dict_lock:
+                    rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
+                # Update the feed URL in the rss_dict with the new URL
+                rss_dict[name][0] = data[0]
+
+                magnets = set()
+                if RSS_COMMAND is not None:
+                    # Replace 'url' with the appropriate variable or URL to scrape for magnet links
+                    magnet_url = entry_link
+                    scraper = cloudscraper.create_scraper(allow_brotli=False)
+                    html = scraper.get(magnet_url).text
+                    soup = BeautifulSoup(html, 'html.parser')
+
+                    for a_tag in soup.find_all('a', attrs={'href': re.compile(r"^magnet")}):
+                        magnet_url = a_tag.get('href')
+                        title = entry_title.replace('>', '').replace('<', '')
+
+                        if (magnet_url, title) not in magnets:
+                            magnets.add((magnet_url, title))
+
+                    for magnet_url, title in magnets:
+                        feed_msg = f"/{RSS_COMMAND} {magnet_url}"
+                        sendRss(feed_msg, context.bot)
+                else:
+                    feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
+                    feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
+                
+                LOGGER.info(f"Feed Name: {name}")
+                LOGGER.info(f"Last item: {entry_link}")
+        except psycopg2.errors.QueryCanceled as e:
+            LOGGER.error(f"Statement timeout error occurred for feed: {name} - Feed Link: {data[0]}")
+            LOGGER.error(str(e))
+            conn.rollback()  # Roll back the transaction
+            continue        
+        except Exception as e:
+            LOGGER.error(f"Error inserting RSS data into the database for feed: {name} - Feed Link: {data[0]}")
+            LOGGER.error(str(e))
+
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
