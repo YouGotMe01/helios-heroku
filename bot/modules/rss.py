@@ -278,6 +278,16 @@ def rss_monitor(context):
                         LOGGER.warning(f"Invalid RSS data for feed: {name} - Feed Link: {data[0]}")
                         continue
 
+                    # Check if the "url" column exists in the table and add it if it's missing
+                    with db_manager.get_connection() as conn, conn.cursor() as cur:
+                        cur.execute("""
+                            SELECT column_name
+                            FROM information_schema.columns
+                            WHERE table_name = 'rss_data' AND column_name = 'url'
+                        """)
+                        if not cur.fetchone():
+                            db_manager.add_url_column()
+
                     rss_d = feedparser.parse(data[0])
                     if not rss_d.entries:
                         LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
@@ -343,7 +353,6 @@ def rss_monitor(context):
                     continue
     finally:
         rss_semaphore.release()
-
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
