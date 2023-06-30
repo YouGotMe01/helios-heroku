@@ -281,7 +281,7 @@ def rss_monitor(context):
                 cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
                 row = cur.fetchone()
                 my_last_title = row[0] if row else None
-                cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], '', ''))
+                cur.execute("INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], '', ''))
 
             rss_d = feedparser.parse(data[0])
             if not rss_d.entries:
