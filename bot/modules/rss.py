@@ -207,8 +207,13 @@ class DbManager:
     def create_table(self):
         with self.conn.cursor() as cur:
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS rss_data (id SERIAL PRIMARY KEY, name TEXT, last_link TEXT, last_title TEXT)""")
-
+                CREATE TABLE IF NOT EXISTS rss_data (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT,
+                    url TEXT,  -- Add the "url" column here
+                    last_link TEXT,
+                    last_title TEXT)""")
+      
     def __enter__(self):
         return self.conn.cursor()
 
