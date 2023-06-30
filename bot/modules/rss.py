@@ -223,20 +223,20 @@ class DbManager:
         self.conn.close()
 
     def rss_update(self, name, url, last_link, last_title):
-        with self.__enter__() as cur:
-            try:
-                cur.execute("SELECT * FROM rss_data WHERE name = %s", (name,))
-                row = cur.fetchone()
-                if row:
-                    cur.execute("UPDATE rss_data SET url = %s, last_link = %s, last_title = %s WHERE name = %s",
-                                (url, last_link, last_title, name))
-                else:
-                    cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)",
-                                (name, url, last_link, last_title))
-            except DatabaseError as error:
-                self.conn.rollback()
-                LOGGER.error(f"Error in rss_update: {error}")
-                print(error)
+    with self.__enter__() as cur:
+        try:
+            cur.execute("SELECT * FROM rss_data WHERE name = %s", (name,))
+            row = cur.fetchone()
+            if row:
+                cur.execute("UPDATE rss_data SET url = %s, last_link = %s, last_title = %s WHERE name = %s",
+                            (url, last_link, last_title, name))
+            else:
+                cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)",
+                            (name, url, last_link, last_title))
+        except DatabaseError as error:
+            self.conn.rollback()
+            LOGGER.error(f"Error in rss_update: {error}")
+            print(error)
 
     def get_connection(self):
         return psycopg2.connect(self.db_uri)
