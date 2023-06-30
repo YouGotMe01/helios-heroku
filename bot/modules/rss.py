@@ -315,7 +315,7 @@ def rss_monitor(context):
                         magnets = set()
                         if RSS_COMMAND is not None:
                             # Replace 'url' with the appropriate variable or URL to scrape for magnet links
-                            magnet_url = entry_link
+                            magnet_url = url
                             scraper = cloudscraper.create_scraper(allow_brotli=False)
                             html = scraper.get(magnet_url).text
                             soup = BeautifulSoup(html, 'html.parser')
