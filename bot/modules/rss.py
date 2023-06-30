@@ -275,12 +275,12 @@ def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
     for name, data in rss_saver.items():
-    try:
-        with db_manager.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
-            row = cur.fetchone()
-            my_last_title = row[0] if row else None
-            cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], '', ''))
+        try:
+            with db_manager.get_connection() as conn, conn.cursor() as cur:
+                cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
+                row = cur.fetchone()
+                my_last_title = row[0] if row else None
+                cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], '', ''))
 
             rss_d = feedparser.parse(data[0])
             if not rss_d.entries:
