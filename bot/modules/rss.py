@@ -203,6 +203,9 @@ class DbManager:
         except DatabaseError as error:
             LOGGER.error(f"Error in DB initialization: {error}")
             print(error)
+            
+db_manager = DbManager()
+
     def create_table(self):
         with self.conn.cursor() as cur:
             cur.execute("""
