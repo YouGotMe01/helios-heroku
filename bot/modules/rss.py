@@ -194,6 +194,7 @@ def rss_set_update(update, context):
             pass
             
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
 class DbManager:
     def __init__(self):
         db_uri = os.environ.get('DATABASE_URL')
@@ -203,23 +204,25 @@ class DbManager:
         except DatabaseError as error:
             LOGGER.error(f"Error in DB initialization: {error}")
             print(error)
-            
-db_manager = DbManager()
 
     def create_table(self):
-        with self.conn.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS rss_data (
-                    id SERIAL PRIMARY KEY,
-                    name TEXT,
-                    url TEXT,
-                    last_link TEXT,
-                    last_title TEXT,
-                    feed_url VARCHAR(255) )""")
-            cur.execute("CREATE INDEX IF NOT EXISTS rss_data_name_idx ON rss_data (name)")
-    def __enter__(self):
-        return self.conn.cursor()
-
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS rss_data (
+                        name VARCHAR(255) PRIMARY KEY,
+                        feed_url TEXT NOT NULL,
+                        last_entry_url TEXT,
+                        last_title TEXT,
+                        created_at TIMESTAMP DEFAULT NOW()
+                    )
+                    """
+                )
+        except Exception as e:
+            LOGGER.error(f"Error creating table: {e}")
+            raise e
+            
     def __exit__(self, exc_type, exc_value, traceback):
         self.conn.commit()
         self.conn.cursor().close()
