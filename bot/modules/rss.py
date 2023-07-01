@@ -196,67 +196,58 @@ def rss_set_update(update, context):
             
 LOGGER = logging.getLogger(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
+import os
+import logging
+import psycopg2
+from psycopg2 import DatabaseError
+
+LOGGER = logging.getLogger(__name__)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
 
 class DbManager:
     def __init__(self, db_uri):
-        self.db_uri = db_uri  # Assign the db_uri parameter to an instance variable
-        try:
-            self.conn = psycopg2.connect(db_uri)
-            self.create_table()
-        except DatabaseError as error:
-            LOGGER.error(f"Error in DB initialization: {error}")
-            print(error)
-    def __enter__(self):
-        return self
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.conn.close()         
+        self.db_uri = db_uri
+
     def create_table(self):
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS rss_data (
-                        name VARCHAR(255) PRIMARY KEY,
-                        feed_url TEXT NOT NULL,
-                        last_entry_url TEXT,
-                        last_title TEXT,
-                        created_at TIMESTAMP DEFAULT NOW())""")
-        except Exception as e:
-            LOGGER.error(f"Error creating table: {e}")
-            raise e      
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.conn.commit()
-        self.conn.cursor().close()
-        self.conn.close()
+        with self.get_connection() as conn:
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        CREATE TABLE IF NOT EXISTS rss_data (
+                            name VARCHAR(255) PRIMARY KEY,
+                            feed_url TEXT NOT NULL,
+                            last_entry_url TEXT,
+                            last_title TEXT,
+                            created_at TIMESTAMP DEFAULT NOW())""")
+            except Exception as e:
+                LOGGER.error(f"Error creating table: {e}")
+                raise e
 
     def rss_update(self, name, url, last_link, last_title):
-        with self.__enter__() as cur:
+        with self.get_connection() as conn:
             try:
-                cur.execute("SELECT * FROM rss_data WHERE name = %s", (name,))
-                row = cur.fetchone()
-                if row:
-                    cur.execute("UPDATE rss_data SET url = %s, last_link = %s, last_title = %s WHERE name = %s",
-                                (url, last_link, last_title, name))
-                else:
-                    cur.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)",
-                                (name, url, last_link, last_title))
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT * FROM rss_data WHERE name = %s", (name,))
+                    row = cursor.fetchone()
+                    if row:
+                        cursor.execute("UPDATE rss_data SET url = %s, last_link = %s, last_title = %s WHERE name = %s",
+                                       (url, last_link, last_title, name))
+                    else:
+                        cursor.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)",
+                                       (name, url, last_link, last_title))
             except DatabaseError as error:
-                self.conn.rollback()
                 LOGGER.error(f"Error in rss_update: {error}")
                 print(error)
 
-
     def get_connection(self):
         return psycopg2.connect(self.db_uri)
-        
-    def add_url_column(self):
-        with self.conn.cursor() as cur:
-            cur.execute("ALTER TABLE rss_data ADD COLUMN url TEXT")
-            
-db_manager = None
-if DATABASE_URL is not None:
-    db_manager = DbManager(DATABASE_URL)
 
+
+# Create an instance of DbManager using the DATABASE_URL
+db_manager = DbManager(DATABASE_URL)
+      
 class JobSemaphore:
     def __init__(self, max_instances):
         self.max_instances = max_instances
