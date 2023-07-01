@@ -205,6 +205,7 @@ class DbManager:
         except DatabaseError as error:
             LOGGER.error(f"Error in DB initialization: {error}")
             print(error)
+LOGGER = logging.getLogger(__name__)
 
     def create_table(self):
         try:
