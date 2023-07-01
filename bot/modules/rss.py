@@ -198,12 +198,12 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
-        try:
-            self.conn = psycopg2.connect(db_uri)
-            self.create_table()
-        except DatabaseError as error:
-            LOGGER.error(f"Error in DB initialization: {error}")
-            print(error)
+    try:
+        self.conn = psycopg2.connect(db_uri, connect_timeout=60)
+        self.create_table()
+    except DatabaseError as error:
+        LOGGER.error(f"Error in DB initialization: {error}")
+        print(error)
 
     def create_table(self):
         with self.conn.cursor() as cur:
@@ -211,11 +211,11 @@ class DbManager:
                 CREATE TABLE IF NOT EXISTS rss_data (
                     id SERIAL PRIMARY KEY,
                     name TEXT,
-                    url TEXT, -- Add the "url" column here
+                    url TEXT,
                     last_link TEXT,
-                    last_title TEXT) """)                    
-            cur.execute("ALTER TABLE rss_data ADD COLUMN feed_url VARCHAR(255);")  # Add this line
-            
+                    last_title TEXT,
+                    feed_url VARCHAR(255) )""")
+            cur.execute("CREATE INDEX IF NOT EXISTS rss_data_name_idx ON rss_data (name)")
     def __enter__(self):
         return self.conn.cursor()
 
@@ -258,18 +258,21 @@ class JobSemaphore:
     def __init__(self, max_instances):
         self.max_instances = max_instances
         self.current_instances = 0
+        self.lock = threading.Lock()
 
     def acquire(self):
-        while self.current_instances >= self.max_instances:
-            time.sleep(1)
-        self.current_instances += 1
+        with self.lock:
+            while self.current_instances >= self.max_instances:
+                time.sleep(1)
+            self.current_instances += 1
 
     def release(self):
-        self.current_instances -= 1
+        with self.lock:
+            self.current_instances -= 1
 
-
-max_rss_instances = 1  # Adjust the maximum number of allowed instances as needed
+max_rss_instances = 2  # Increase the maximum number of allowed instances as needed
 rss_semaphore = JobSemaphore(max_rss_instances)
+
 rss_dict_lock = threading.Lock()
 
 def rss_monitor(context):
