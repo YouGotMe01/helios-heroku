@@ -213,9 +213,9 @@ class DbManager:
                     name TEXT,
                     url TEXT, -- Add the "url" column here
                     last_link TEXT,
-                    last_title TEXT) """)
-                    
-      
+                    last_title TEXT) """)                    
+            cur.execute("ALTER TABLE rss_data ADD COLUMN feed_url VARCHAR(255);")  # Add this line
+            
     def __enter__(self):
         return self.conn.cursor()
 
@@ -281,8 +281,7 @@ def rss_monitor(context):
                 cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
                 row = cur.fetchone()
                 my_last_title = row[0] if row else None
-                cur.execute("INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)", (name, data[0], '', ''))
-
+                
             rss_d = feedparser.parse(data[0])
             if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
@@ -299,7 +298,7 @@ def rss_monitor(context):
                     LOGGER.error(f"Error updating RSS entry for feed: {name} - Feed Link: {data[0]}")
                     LOGGER.error(str(e))
                     continue
-               
+
                 with rss_dict_lock:
                     rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
                 # Update the feed URL in the rss_dict with the new URL
@@ -326,17 +325,26 @@ def rss_monitor(context):
                 else:
                     feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
-                
+
                 LOGGER.info(f"Feed Name: {name}")
                 LOGGER.info(f"Last item: {entry_link}")
         except psycopg2.errors.QueryCanceled as e:
             LOGGER.error(f"Statement timeout error occurred for feed: {name} - Feed Link: {data[0]}")
             LOGGER.error(str(e))
             conn.rollback()  # Roll back the transaction
-            continue        
+            continue
         except Exception as e:
             LOGGER.error(f"Error inserting RSS data into the database for feed: {name} - Feed Link: {data[0]}")
             LOGGER.error(str(e))
+
+        # Update the last_title in the database after processing all entries
+        try:
+            with db_manager.get_connection() as conn, conn.cursor() as cur:
+                cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s", (entry_title, name))
+        except Exception as e:
+            LOGGER.error(f"Error updating last_title for feed: {name}")
+            LOGGER.error(str(e))
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
