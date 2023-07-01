@@ -200,13 +200,13 @@ LOGGER = logging.getLogger(__name__)
 
 class DbManager:
     def __init__(self, db_uri):
+        self.db_uri = db_uri  # Assign the db_uri parameter to an instance variable
         try:
             self.conn = psycopg2.connect(db_uri)
             self.create_table()
         except DatabaseError as error:
             LOGGER.error(f"Error in DB initialization: {error}")
             print(error)
-
     def create_table(self):
         try:
             with self.conn.cursor() as cursor:
