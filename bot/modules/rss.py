@@ -196,15 +196,6 @@ def rss_set_update(update, context):
             
 LOGGER = logging.getLogger(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
-import os
-import logging
-import psycopg2
-from psycopg2 import DatabaseError
-
-LOGGER = logging.getLogger(__name__)
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
@@ -219,7 +210,8 @@ class DbManager:
                             name VARCHAR(255) PRIMARY KEY,
                             feed_url TEXT NOT NULL,
                             last_entry_url TEXT,
-                            last_title TEXT,
+                            last_title TEXT, 
+                            url TEXT, -- Add the url column
                             created_at TIMESTAMP DEFAULT NOW())""")
             except Exception as e:
                 LOGGER.error(f"Error creating table: {e}")
@@ -243,8 +235,6 @@ class DbManager:
 
     def get_connection(self):
         return psycopg2.connect(self.db_uri)
-
-
 # Create an instance of DbManager using the DATABASE_URL
 db_manager = DbManager(DATABASE_URL)
       
