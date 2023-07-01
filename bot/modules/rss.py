@@ -194,6 +194,8 @@ def rss_set_update(update, context):
             pass
             
 DATABASE_URL = os.environ.get('DATABASE_URL')
+db_manager = DbManager(db_uri)
+db_manager = Db
 
 class DbManager:
     def __init__(self):
