@@ -194,9 +194,8 @@ def rss_set_update(update, context):
         except:
             pass
             
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
 LOGGER = logging.getLogger(__name__)
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 class DbManager:
     def __init__(self, db_uri):
@@ -207,6 +206,10 @@ class DbManager:
         except DatabaseError as error:
             LOGGER.error(f"Error in DB initialization: {error}")
             print(error)
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.conn.close()         
     def create_table(self):
         try:
             with self.conn.cursor() as cursor:
