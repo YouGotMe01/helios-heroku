@@ -1,4 +1,5 @@
 import os
+import logging
 import threading
 import psycopg2
 import cloudscraper
