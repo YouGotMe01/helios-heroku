@@ -194,7 +194,6 @@ def rss_set_update(update, context):
             pass
             
 DATABASE_URL = os.environ.get('DATABASE_URL')
-db_manager = DbManager(DB_URI)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -250,11 +249,9 @@ class DbManager:
         with self.conn.cursor() as cur:
             cur.execute("ALTER TABLE rss_data ADD COLUMN url TEXT")
             
-
+db_manager = None
 if DATABASE_URL is not None:
     db_manager = DbManager(DATABASE_URL)
-else:
-    db_manager = None
 
 class JobSemaphore:
     def __init__(self, max_instances):
