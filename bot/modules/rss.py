@@ -196,15 +196,13 @@ def rss_set_update(update, context):
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 class DbManager:
-    def __init__(self, db_uri):
-        self.db_uri = db_uri
-    try:
-        self.conn = psycopg2.connect(db_uri, connect_timeout=60)
-        self.create_table()
-    except DatabaseError as error:
-        LOGGER.error(f"Error in DB initialization: {error}")
-        print(error)
-
+    def __init__(self):
+        try:
+            self.conn = psycopg2.connect(DB_URI)
+            self.create_table()
+        except DatabaseError as error:
+            LOGGER.error(f"Error in DB initialization: {error}")
+            print(error)
     def create_table(self):
         with self.conn.cursor() as cur:
             cur.execute("""
