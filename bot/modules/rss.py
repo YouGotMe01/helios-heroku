@@ -197,14 +197,14 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 db_manager = DbManager(DB_URI)
 
 class DbManager:
-    def __init__(self):
-        db_uri = os.environ.get('DATABASE_URL')
+    def __init__(self, db_uri):
         try:
             self.conn = psycopg2.connect(db_uri)
             self.create_table()
         except DatabaseError as error:
             LOGGER.error(f"Error in DB initialization: {error}")
             print(error)
+
 LOGGER = logging.getLogger(__name__)
 
     def create_table(self):
