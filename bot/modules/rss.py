@@ -285,7 +285,8 @@ def rss_monitor(context):
                 entry_link = entry['link']
                 entry_title = entry['title']
                 if entry_title == my_last_title:
-                    continue
+                    continue  # Skip processing if the entry has already been processed
+
                 try:
                     db_manager.rss_update(name, entry_link, entry_title, my_last_title)
                 except Exception as e:
@@ -336,7 +337,7 @@ def rss_monitor(context):
             with db_manager.get_connection() as conn, conn.cursor() as cur:
                 cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s", (entry_title, name))
         except Exception as e:
-            LOGGER.error(f"Error updating last_title for feed: {name}")
+            LOGGER.error(str(e))
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
