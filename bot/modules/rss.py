@@ -217,6 +217,7 @@ class DbManager:
                 LOGGER.error(f"Error creating table: {e}")
                 raise e
 
+
     def rss_update(self, name, url, last_link, last_title):
         with self.get_connection() as conn:
             try:
