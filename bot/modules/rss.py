@@ -196,14 +196,16 @@ def rss_set_update(update, context):
             
 LOGGER = logging.getLogger(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
-
+        
     def create_table(self):
         with self.get_connection() as conn:
             try:
                 with conn.cursor() as cursor:
+                    cursor.execute("DROP TABLE IF EXISTS rss_data")
                     cursor.execute(
                         """
                         CREATE TABLE IF NOT EXISTS rss_data (
@@ -216,7 +218,6 @@ class DbManager:
             except Exception as e:
                 LOGGER.error(f"Error creating table: {e}")
                 raise e
-
 
     def rss_update(self, name, url, last_link, last_title):
         with self.get_connection() as conn:
