@@ -265,6 +265,11 @@ def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
     for name, data in rss_saver.items():
+        # Check if feed URL is available
+        if data[0] is None:
+            LOGGER.warning(f"Feed URL not available for feed: {name}")
+            continue
+
         try:
             with db_manager.get_connection() as conn, conn.cursor() as cur:
                 cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
@@ -332,8 +337,6 @@ def rss_monitor(context):
                 cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s", (entry_title, name))
         except Exception as e:
             LOGGER.error(f"Error updating last_title for feed: {name}")
-            LOGGER.error(str(e))
-
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
