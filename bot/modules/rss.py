@@ -218,7 +218,7 @@ class DbManager:
             except Exception as e:
                 LOGGER.error(f"Error creating table: {e}")
                 raise e
-
+                
     def rss_update(self, name, url, last_link, last_title):
         with self.get_connection() as conn:
             try:
@@ -226,15 +226,22 @@ class DbManager:
                     cursor.execute("SELECT * FROM rss_data WHERE name = %s", (name,))
                     row = cursor.fetchone()
                     if row:
+                        # Check if the URL is already present
+                        if row['url'] == url:
+                            LOGGER.info(f"Duplicate feed URL: {url}")
+                            return
+
+                        # Update the existing row
                         cursor.execute("UPDATE rss_data SET url = %s, last_link = %s, last_title = %s WHERE name = %s",
-                                       (url, last_link, last_title, name))
+                                      b(url, last_link, last_title, name))
                     else:
+                        # Insert a new row
                         cursor.execute("INSERT INTO rss_data (name, url, last_link, last_title) VALUES (%s, %s, %s, %s)",
-                                       (name, url, last_link, last_title))
+                                   (name, url, last_link, last_title))
             except DatabaseError as error:
                 LOGGER.error(f"Error in rss_update: {error}")
                 print(error)
-
+            
     def get_connection(self):
         return psycopg2.connect(self.db_uri)
 # Create an instance of DbManager using the DATABASE_URL
