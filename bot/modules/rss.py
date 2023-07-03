@@ -218,11 +218,11 @@ class DbManager:
             except Exception as e:
                 LOGGER.error(f"Error creating table: {e}")
                 raise e
-                
-    def rss_update(self, name: str, last_link: str, last_title: str, cur_last_title: str) -> None:
+               
+    def rss_update(self, name: str, feed_url: str, last_link: str, last_title: str, cur_last_title: str) -> None:
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s) ON CONFLICT (name) DO UPDATE SET feed_url = EXCLUDED.feed_url, last_link = EXCLUDED.last_link, last_title = EXCLUDED.last_title",
-                        (name, self.rss_dict[name][0], last_link, last_title))
+                        (name, feed_url, last_link, last_title))
             
     def get_connection(self):
         return psycopg2.connect(self.db_uri)
