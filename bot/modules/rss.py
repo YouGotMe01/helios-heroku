@@ -262,14 +262,12 @@ def rss_monitor(context):
                     continue  # Skip processing if the entry has already been processed
                 if entry_link in processed_urls:
                     continue  # Skip processing if the URL has already been processed
-
                 try:
-                    db_manager.rss_update(name, data[0], entry_link, entry_title, my_last_title, cur_last_title=my_last_title) # Pass cur_last_title parameter
+                    db_manager.rss_update(name, data[0], entry_link, entry_title, cur_last_title=my_last_title)
                 except Exception as e:
                     LOGGER.error(f"Error updating RSS entry for feed: {name} - Feed Link: {data[0]}")
                     LOGGER.error(str(e))
-                    continue
-
+                    continue    
                 with rss_dict_lock:
                     rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
                 # Update the feed URL in the rss_dict with the new URL
