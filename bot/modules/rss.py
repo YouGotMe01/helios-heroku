@@ -196,6 +196,7 @@ def rss_set_update(update, context):
             
 LOGGER = logging.getLogger(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
@@ -238,8 +239,9 @@ class DbManager:
                     "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
                     (feed_url, last_link, last_title, name, cur_last_title)
                 )
-  
-db_manager = DbManager(DATABASE_URL)     
+
+db_manager = DbManager(DATABASE_URL)
+
 class JobSemaphore:
     def __init__(self, max_instances):
         self.max_instances = max_instances
@@ -255,15 +257,17 @@ class JobSemaphore:
     def release(self):
         with self.lock:
             self.current_instances -= 1
-            
-max_rss_instances=2
+
+max_rss_instances = 2
 rss_semaphore = JobSemaphore(max_rss_instances)
 rss_dict_lock = threading.Lock()
+rss_dict = {}
 
 def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
     processed_urls = set()
+    processed_feed_urls = set()  # Set to store processed feed URLs
     for name, data in rss_saver.items():
         # Check if feed URL is available
         if data[0] is None:
@@ -272,10 +276,15 @@ def rss_monitor(context):
 
         try:
             with db_manager.get_connection() as conn, conn.cursor() as cur:
-                cur.execute("SELECT last_title FROM rss_data WHERE name = %s", (name,))
+                cur.execute("SELECT last_title, feed_url FROM rss_data WHERE name = %s", (name,))
                 row = cur.fetchone()
                 my_last_title = row[0] if row else None
-                
+                my_feed_url = row[1] if row else None
+
+            # Skip processing if the feed URL has already been processed
+            if my_feed_url in processed_feed_urls:
+                continue
+
             rss_d = feedparser.parse(data[0])
             if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
@@ -293,7 +302,7 @@ def rss_monitor(context):
                 except Exception as e:
                     LOGGER.error(f"Error updating RSS entry for feed: {name} - Feed Link: {data[0]}")
                     LOGGER.error(str(e))
-                    continue    
+                    continue
                 with rss_dict_lock:
                     rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
                 # Update the feed URL in the rss_dict with the new URL
@@ -323,13 +332,13 @@ def rss_monitor(context):
 
                 LOGGER.info(f"Feed Name: {name}")
                 LOGGER.info(f"Last item: {entry_link}")
-                
+
                 processed_urls.add(entry_link)
+                processed_feed_urls.add(my_feed_url)
         except psycopg2.errors.QueryCanceled as e:
             LOGGER.error(f"Statement timeout error occurred for feed: {name} - Feed Link: {data[0]}")
             LOGGER.error(str(e))
-            conn.rollback()  # Roll back the transaction
-            
+            conn.rollback()  
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
