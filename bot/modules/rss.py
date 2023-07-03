@@ -223,6 +223,9 @@ class DbManager:
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s) ON CONFLICT (name) DO UPDATE SET feed_url = EXCLUDED.feed_url, last_link = EXCLUDED.last_link, last_title = EXCLUDED.last_title",
                         (name, feed_url, last_link, last_title))
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s", (last_title, name))
+            cur.execute("UPDATE rss_data SET cur_last_title = %s WHERE name = %s", (cur_last_title, name)) # Add this line to update the cur_last_title
             
     def get_connection(self):
         return psycopg2.connect(self.db_uri)
@@ -249,6 +252,7 @@ max_rss_instances = 2  # Increase the maximum number of allowed instances as nee
 rss_semaphore = JobSemaphore(max_rss_instances)
 
 rss_dict_lock = threading.Lock()
+
 def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
@@ -279,7 +283,7 @@ def rss_monitor(context):
                     continue  # Skip processing if the URL has already been processed
 
                 try:
-                    db_manager.rss_update(name, entry_link, entry_title, my_last_title)
+                    db_manager.rss_update(name, data[0], entry_link, entry_title, my_last_title, cur_last_title=my_last_title) # Pass cur_last_title parameter
                 except Exception as e:
                     LOGGER.error(f"Error updating RSS entry for feed: {name} - Feed Link: {data[0]}")
                     LOGGER.error(str(e))
@@ -320,27 +324,7 @@ def rss_monitor(context):
             LOGGER.error(f"Statement timeout error occurred for feed: {name} - Feed Link: {data[0]}")
             LOGGER.error(str(e))
             conn.rollback()  # Roll back the transaction
-            continue
-        except Exception as e:
-            LOGGER.error(f"Error inserting or updating RSS data into the database for feed: {name} - Feed Link: {data[0]}")
-            LOGGER.error(str(e))
-            continue
-
-    # Insert or update the entry in the database after processing all entries
-    try:
-        with db_manager.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s) ON CONFLICT (name) DO UPDATE SET feed_url = EXCLUDED.feed_url, last_link = EXCLUDED.last_link, last_title = EXCLUDED.last_title",
-                        (name, data[0], entry_link, entry_title))
-    except Exception as e:
-        LOGGER.error(f"Error inserting or updating RSS data into the database for feed: {name} - Feed Link: {data[0]}")
-        LOGGER.error(str(e))
-
-    # Update the last_title in the database after processing all entries
-    try:
-        with db_manager.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s", (entry_title, name))
-    except Exception as e:
-        LOGGER.error(str(e))
+            
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
