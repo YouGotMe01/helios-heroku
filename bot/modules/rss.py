@@ -204,14 +204,31 @@ class DbManager:
     def get_connection(self):
         return psycopg2.connect(self.db_uri)
 
+    def create_feed_url_column(self):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'rss_data' AND column_name = 'feed_url'
+                )
+            """)
+            exists = cur.fetchone()[0]
+            if not exists:
+                cur.execute("ALTER TABLE rss_data ADD COLUMN feed_url TEXT")
+
     def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None):
+        self.create_feed_url_column()  # Add this line to create the column if necessary
         with self.get_connection() as conn, conn.cursor() as cur:
             if cur_last_title is None:
-                cur.execute("INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
-                            (name, feed_url, last_link, last_title))
+                cur.execute(
+                    "INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
+                    (name, feed_url, last_link, last_title)
+                )
             else:
-                cur.execute("UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
-                            (feed_url, last_link, last_title, name, cur_last_title))
+                cur.execute(
+                    "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
+                    (feed_url, last_link, last_title, name, cur_last_title)
+                )
   
 db_manager = DbManager(DATABASE_URL)     
 class JobSemaphore:
