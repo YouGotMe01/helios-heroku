@@ -200,38 +200,20 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
-        
-    def create_table(self):
-        with self.get_connection() as conn:
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute("DROP TABLE IF EXISTS rss_data")
-                    cursor.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS rss_data (
-                            name VARCHAR(255) PRIMARY KEY,
-                            feed_url TEXT NOT NULL,
-                            last_entry_url TEXT,
-                            last_title TEXT, 
-                            url TEXT, -- Add the url column
-                            created_at TIMESTAMP DEFAULT NOW())""")
-            except Exception as e:
-                LOGGER.error(f"Error creating table: {e}")
-                raise e
-               
-    def rss_update(self, name: str, feed_url: str, last_link: str, last_title: str, cur_last_title: str) -> None:
-        with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s) ON CONFLICT (name) DO UPDATE SET feed_url = EXCLUDED.feed_url, last_link = EXCLUDED.last_link, last_title = EXCLUDED.last_title",
-                        (name, feed_url, last_link, last_title))
-        with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s", (last_title, name))
-            cur.execute("UPDATE rss_data SET cur_last_title = %s WHERE name = %s", (cur_last_title, name)) # Add this line to update the cur_last_title
-            
+
     def get_connection(self):
         return psycopg2.connect(self.db_uri)
-# Create an instance of DbManager using the DATABASE_URL
-db_manager = DbManager(DATABASE_URL)
-      
+
+    def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            if cur_last_title is None:
+                cur.execute("INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
+                            (name, feed_url, last_link, last_title))
+            else:
+                cur.execute("UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
+                            (feed_url, last_link, last_title, name, cur_last_title))
+  
+db_manager = DbManager(DATABASE_URL)     
 class JobSemaphore:
     def __init__(self, max_instances):
         self.max_instances = max_instances
@@ -247,10 +229,9 @@ class JobSemaphore:
     def release(self):
         with self.lock:
             self.current_instances -= 1
-
-max_rss_instances = 2  # Increase the maximum number of allowed instances as needed
+            
+max_rss_instances=2
 rss_semaphore = JobSemaphore(max_rss_instances)
-
 rss_dict_lock = threading.Lock()
 
 def rss_monitor(context):
