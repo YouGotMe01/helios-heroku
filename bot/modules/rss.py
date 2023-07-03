@@ -360,9 +360,9 @@ def rss_monitor(context):
                 cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s", (entry_title, name))
         except Exception as e:
             LOGGER.error(str(e))
-The `INSERT INTO` statement you provided is actually an upsert (insert or update) statement that inserts a new row if it doesn't exist, or updates an existing row if it does. The `ON CONFLICT` clause specifies the conflict resolution strategy, which in this case is to update the `feed_url`, `last_link`, and `last_title` columns if a row with the same `name` already exists.
-The modified code snippet you provided looks correct and should work as intended. The `try` and `except` blocks are included to catch any exceptions that might occur when executing the query and handle them appropriately. The `INSERT INTO` statement is executed inside the `rss_monitor` function after processing all entries, so it should only be executed once per feed.
-One thing to note is that the `INSERT INTO` statement assumes that the `rss_data` table already exists and has the correct schema. If the table doesn't exist or has a different schema, the statement will fail. You should make sure that the table exists and has the correct schema before running the code.       
+#The `INSERT INTO` statement you provided is actually an upsert (insert or update) statement that inserts a new row if it doesn't exist, or updates an existing row if it does. The `ON CONFLICT` clause specifies the conflict resolution strategy, which in this case is to update the `feed_url`, `last_link`, and `last_title` columns if a row with the same `name` already exists.
+#The modified code snippet you provided looks correct and should work as intended. The `try` and `except` blocks are included to catch any exceptions that might occur when executing the query and handle them appropriately. The `INSERT INTO` statement is executed inside the `rss_monitor` function after processing all entries, so it should only be executed once per feed.
+#One thing to note is that the `INSERT INTO` statement assumes that the `rss_data` table already exists and has the correct schema. If the table doesn't exist or has a different schema, the statement will fail. You should make sure that the table exists and has the correct schema before running the code.       
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
