@@ -196,7 +196,6 @@ def rss_set_update(update, context):
             
 LOGGER = logging.getLogger(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
-
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
@@ -215,6 +214,16 @@ class DbManager:
             exists = cur.fetchone()[0]
             if not exists:
                 cur.execute("ALTER TABLE rss_data ADD COLUMN feed_url TEXT")
+
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = %s AND conrelid = 'rss_data'::regclass
+                )
+            """, ('unique_feed_url',))
+            unique_exists = cur.fetchone()[0]
+            if not unique_exists:
+                cur.execute("ALTER TABLE rss_data ADD CONSTRAINT unique_feed_url UNIQUE (feed_url)")
 
     def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None):
         self.create_feed_url_column()  # Add this line to create the column if necessary
