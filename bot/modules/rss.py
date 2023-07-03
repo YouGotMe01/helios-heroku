@@ -271,6 +271,7 @@ rss_dict_lock = threading.Lock()
 def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
+    processed_urls = set()
     for name, data in rss_saver.items():
         # Check if feed URL is available
         if data[0] is None:
@@ -293,6 +294,8 @@ def rss_monitor(context):
                 entry_title = entry['title']
                 if entry_title == my_last_title:
                     continue  # Skip processing if the entry has already been processed
+                if entry_link in processed_urls:
+                    continue  # Skip processing if the URL has already been processed
 
                 try:
                     db_manager.rss_update(name, entry_link, entry_title, my_last_title)
@@ -330,6 +333,8 @@ def rss_monitor(context):
 
                 LOGGER.info(f"Feed Name: {name}")
                 LOGGER.info(f"Last item: {entry_link}")
+                
+                processed_urls.add(entry_link)
         except psycopg2.errors.QueryCanceled as e:
             LOGGER.error(f"Statement timeout error occurred for feed: {name} - Feed Link: {data[0]}")
             LOGGER.error(str(e))
@@ -345,7 +350,7 @@ def rss_monitor(context):
                 cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s", (entry_title, name))
         except Exception as e:
             LOGGER.error(str(e))
-
+            
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
