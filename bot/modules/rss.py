@@ -194,41 +194,20 @@ def rss_set_update(update, context):
         except:
             pass
             
-logging.basicConfig(level=logging.INFO)      
 LOGGER = logging.getLogger(__name__)
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-rss_dict = {}
-rss_dict_lock = Lock()
 
 class DbManager:
-    def __init__(self, db_uri):
-        self.db_uri = db_uri
+    def __init__(self, db_url):
+        self.db_url = db_url
 
     def get_connection(self):
-        return psycopg2.connect(self.db_uri)
+        return psycopg2.connect(self.db_url)
 
     def create_feed_url_column(self):
         with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("""
-                SELECT EXISTS (
-                    SELECT 1 FROM information_schema.columns
-                    WHERE table_name = 'rss_data' AND column_name = 'feed_url'
-                )
-            """)
-            exists = cur.fetchone()[0]
-            if not exists:
+            cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'rss_data' AND column_name = 'feed_url'")
+            if not cur.fetchone():
                 cur.execute("ALTER TABLE rss_data ADD COLUMN feed_url TEXT")
-
-            cur.execute("""
-                SELECT EXISTS (
-                    SELECT 1 FROM pg_constraint
-                    WHERE conname = %s AND conrelid = 'rss_data'::regclass
-                )
-            """, ('unique_feed_url',))
-            unique_exists = cur.fetchone()[0]
-            if not unique_exists:
-                cur.execute("ALTER TABLE rss_data ADD CONSTRAINT unique_feed_url UNIQUE (feed_url)")
 
     def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None):
         if feed_url is None or feed_url == '':
@@ -237,6 +216,13 @@ class DbManager:
 
         self.create_feed_url_column()  # Add this line to create the column if necessary
         with self.get_connection() as conn, conn.cursor() as cur:
+            # Check if the feed URL already exists in the database
+            cur.execute("SELECT name FROM rss_data WHERE feed_url = %s", (feed_url,))
+            row = cur.fetchone()
+            if row and row[0] != name:
+                LOGGER.warning(f"Feed URL already exists for feed: {row[0]}")
+                return
+
             if cur_last_title is None:
                 cur.execute(
                     "INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
@@ -245,8 +231,21 @@ class DbManager:
                 cur.execute(
                     "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
                     (feed_url, last_link, last_title, name, cur_last_title))
+
+    def rss_list(self):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT name, feed_url, last_link, last_title FROM rss_data")
+            return cur.fetchall()
+
+    def create_tables(self):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS rss_data (
+                    name TEXT PRIMARY KEY,
+                    last_link TEXT,
+                    last_title TEXT)""")
             
-def rss_monitor(context):
+rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
     processed_urls = set()
@@ -301,23 +300,14 @@ def rss_monitor(context):
                     feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
                     sendRss(feed_msg, context.bot)
 
-            with db_manager.get_connection() as conn, conn.cursor() as cur:
-                cur.execute(
-                    "SELECT last_title FROM rss_data WHERE name = %s AND last_title = %s",
-                    (name, my_last_title)
-                )
-                exists = cur.fetchone()
-                if not exists:
-                    cur.execute(
-                        "UPDATE rss_data SET last_link = %s, last_title = %s WHERE name = %s",
-                        (entry_link, entry_title, name)
-                    )
+            # Update the feed URL in the database
+            db_manager.rss_update(name, my_feed_url, entry_link, entry_title, my_last_title)
 
         except Exception as e:
             LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
 
-    LOGGER.info("RSS monitor completed successfully.")
-         
+    LOGGER.info("RSS monitor completed successfully.")    
+    
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
