@@ -198,6 +198,9 @@ logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
+rss_dict = {}
+rss_dict_lock = Lock()
+
 class DbManager:
     def __init__(self, db_uri):
         self.db_uri = db_uri
@@ -228,53 +231,27 @@ class DbManager:
                 cur.execute("ALTER TABLE rss_data ADD CONSTRAINT unique_feed_url UNIQUE (feed_url)")
 
     def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None):
+        if feed_url is None or feed_url == '':
+            LOGGER.warning(f"No feed URL available for feed: {name}")
+            return
+
         self.create_feed_url_column()  # Add this line to create the column if necessary
         with self.get_connection() as conn, conn.cursor() as cur:
             if cur_last_title is None:
                 cur.execute(
                     "INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
-                    (name, feed_url, last_link, last_title)
-                )
+                    (name, feed_url, last_link, last_title))
             else:
                 cur.execute(
                     "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
-                    (feed_url, last_link, last_title, name, cur_last_title)
-                )
-
-db_manager = DbManager(DATABASE_URL)
-
-class JobSemaphore:
-    def __init__(self, max_instances):
-        self.max_instances = max_instances
-        self.current_instances = 0
-        self.lock = threading.Lock()
-
-    def acquire(self):
-        with self.lock:
-            while self.current_instances >= self.max_instances:
-                time.sleep(1)
-            self.current_instances += 1
-
-    def release(self):
-        with self.lock:
-            self.current_instances -= 1
-
-max_rss_instances = 2
-rss_semaphore = JobSemaphore(max_rss_instances)
-rss_dict_lock = threading.Lock()
-rss_dict = {}
-
+                    (feed_url, last_link, last_title, name, cur_last_title))
+            
 def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
     processed_urls = set()
     processed_feed_urls = set()  # Set to store processed feed URLs
     for name, data in rss_saver.items():
-        # Check if feed URL is available
-        if data[0] is None:
-            LOGGER.warning(f"Feed URL not available for feed: {name}")
-            continue
-
         try:
             with db_manager.get_connection() as conn, conn.cursor() as cur:
                 cur.execute("SELECT last_title, feed_url FROM rss_data WHERE name = %s", (name,))
@@ -282,34 +259,26 @@ def rss_monitor(context):
                 my_last_title = row[0] if row else None
                 my_feed_url = row[1] if row else None
 
+            if my_feed_url is None or my_feed_url == '':
+                LOGGER.warning(f"No feed URL available for feed: {name}")
+                continue
+
             # Skip processing if the feed URL has already been processed
             if my_feed_url in processed_feed_urls:
                 continue
 
-            rss_d = feedparser.parse(data[0])
+            rss_d = feedparser.parse(my_feed_url)
             if not rss_d.entries:
-                LOGGER.warning(f"No entries found for feed: {name} - Feed Link: {data[0]}")
+                LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {my_feed_url}")
                 continue
 
+            magnets = set()
             for entry in rss_d.entries:
-                entry_link = entry['link']
-                entry_title = entry['title']
+                entry_link = entry.get('link')
+                entry_title = entry.get('title')
                 if entry_title == my_last_title:
                     continue  # Skip processing if the entry has already been processed
-                if entry_link in processed_urls:
-                    continue  # Skip processing if the URL has already been processed
-                try:
-                    db_manager.rss_update(name, data[0], entry_link, entry_title, cur_last_title=my_last_title)
-                except Exception as e:
-                    LOGGER.error(f"Error updating RSS entry for feed: {name} - Feed Link: {data[0]}")
-                    LOGGER.error(str(e))
-                    continue
-                with rss_dict_lock:
-                    rss_dict[name] = [data[0], entry_link, entry_title, data[3]]
-                # Update the feed URL in the rss_dict with the new URL
-                rss_dict[name][0] = data[0]
 
-                magnets = set()
                 if RSS_COMMAND is not None:
                     # Replace 'url' with the appropriate variable or URL to scrape for magnet links
                     magnet_url = entry_link
@@ -330,17 +299,25 @@ def rss_monitor(context):
                 else:
                     feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
+                    sendRss(feed_msg, context.bot)
 
-                LOGGER.info(f"Feed Name: {name}")
-                LOGGER.info(f"Last item: {entry_link}")
+            with db_manager.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "SELECT last_title FROM rss_data WHERE name = %s AND last_title = %s",
+                    (name, my_last_title)
+                )
+                exists = cur.fetchone()
+                if not exists:
+                    cur.execute(
+                        "UPDATE rss_data SET last_link = %s, last_title = %s WHERE name = %s",
+                        (entry_link, entry_title, name)
+                    )
 
-                processed_urls.add(entry_link)
-                processed_feed_urls.add(my_feed_url)
-        except psycopg2.errors.QueryCanceled as e:
-            LOGGER.error(f"Statement timeout error occurred for feed: {name} - Feed Link: {data[0]}")
-            LOGGER.error(str(e))
-            conn.rollback()
-            
+        except Exception as e:
+            LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
+
+    LOGGER.info("RSS monitor completed successfully.")
+         
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
