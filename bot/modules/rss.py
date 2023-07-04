@@ -339,7 +339,8 @@ def rss_monitor(context):
         except psycopg2.errors.QueryCanceled as e:
             LOGGER.error(f"Statement timeout error occurred for feed: {name} - Feed Link: {data[0]}")
             LOGGER.error(str(e))
-            conn.rollback()  
+            conn.rollback()
+            
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
