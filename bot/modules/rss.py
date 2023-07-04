@@ -245,7 +245,7 @@ class DbManager:
                     last_link TEXT,
                     last_title TEXT)""")
             
-rss_monitor(context):
+def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
     processed_urls = set()
