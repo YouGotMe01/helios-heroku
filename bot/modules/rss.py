@@ -337,6 +337,6 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     if len(rss_jobs) > 0 and rss_jobs[0].enabled:
         pass # Job is already running, no specific action neede        
     else:
-        rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS", context=rss_semaphore)
+        rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS)
         rss_job.enabled = True
     
