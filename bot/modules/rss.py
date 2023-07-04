@@ -194,6 +194,7 @@ def rss_set_update(update, context):
         except:
             pass
             
+logging.basicConfig(level=logging.INFO)      
 LOGGER = logging.getLogger(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
