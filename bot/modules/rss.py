@@ -208,33 +208,33 @@ class DbManager:
             cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'rss_data' AND column_name = 'feed_url'")
             if not cur.fetchone():
                 cur.execute("ALTER TABLE rss_data ADD COLUMN feed_url TEXT")
+                
     def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None, new_title=None):
         if feed_url is None or feed_url == '':
             LOGGER.warning(f"No feed URL available for feed: {name}")
             return
 
-    self.create_feed_url_column()  # Add this line to create the column if necessary
-    with self.get_connection() as conn, conn.cursor() as cur:
-        # Check if the feed URL already exists in the database
-        cur.execute("SELECT name FROM rss_data WHERE feed_url = %s", (feed_url,))
-        row = cur.fetchone()
-        if row and row[0] != name:
-            LOGGER.warning(f"Feed URL already exists for feed: {row[0]}")
-            return
+        self.create_feed_url_column()  # Add this line to create the column if necessary
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT name FROM rss_data WHERE feed_url = %s", (feed_url,))
+            row = cur.fetchone()
+            if row and row[0] != name:
+                LOGGER.warning(f"Feed URL already exists for feed: {row[0]}")
+                return
 
-        if cur_last_title is None:
-            cur.execute(
-                "INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
-                (name, feed_url, last_link, last_title))
-        else:
-            if new_title is None:
+            if cur_last_title is None:
                 cur.execute(
-                    "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
-                    (feed_url, last_link, last_title, name, cur_last_title))
+                    "INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
+                    (name, feed_url, last_link, last_title))
             else:
-                cur.execute(
-                    "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s, name = %s WHERE name = %s AND last_title = %s",
-                    (feed_url, last_link, last_title, new_title, name, cur_last_title))
+                if new_title is None:
+                    cur.execute(
+                        "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
+                        (feed_url, last_link, last_title, name, cur_last_title))
+                else:
+                    cur.execute(
+                        "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s, name = %s WHERE name = %s AND last_title = %s",
+                        (feed_url, last_link, last_title, new_title, name, cur_last_title))
     
 db_manager = DbManager(db_url)  
 def rss_monitor(context):
