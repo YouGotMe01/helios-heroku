@@ -117,22 +117,18 @@ def __onBtDownloadComplete(api, gid):
     sleep(1)
     download = api.get_download(gid)
     LOGGER.info(f"onBtDownloadComplete: {download.name} - Gid: {gid}")
-    
-    dl = getDownloadByGid(gid)
-    if dl:
+    if dl := getDownloadByGid(gid):
         listener = dl.listener()
-        
         if listener.select:
             res = download.files
             for file_o in res:
                 f_path = file_o.path
-                if not file_o.selected and os.path.exists(f_path):
+                if not file_o.selected and ospath.exists(f_path):
                     try:
-                        os.remove(f_path)
+                        remove(f_path)
                     except:
                         pass
             clean_unwanted(download.dir)
-        
         if listener.seed:
             try:
                 api.set_options({'max-upload-limit': '0'}, [download])
@@ -140,9 +136,7 @@ def __onBtDownloadComplete(api, gid):
                 LOGGER.error(f'{e} You are not able to seed because you added global option seed-time=0 without adding specific seed_time for this torrent')
         else:
             api.client.force_pause(gid)
-        
         listener.onDownloadComplete()
-        
         if listener.seed:
             with download_dict_lock:
                 if listener.uid not in download_dict:
@@ -151,11 +145,9 @@ def __onBtDownloadComplete(api, gid):
                 download_dict[listener.uid] = AriaDownloadStatus(gid, listener)
                 download_dict[listener.uid].start_time = seed_start_time
             LOGGER.info(f"Seeding started: {download.name} - Gid: {gid}")
-            
             download = download.live
             if download.is_complete:
-                dl = getDownloadByGid(gid)
-                if dl:
+                if dl := getDownloadByGid(gid):
                     LOGGER.info(f"Cancelling Seed: {download.name}")
                     listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
                     api.remove([download], force=True, files=True)
@@ -164,7 +156,7 @@ def __onBtDownloadComplete(api, gid):
                 update_all_messages()
         else:
             api.remove([download], force=True, files=True)
-
+            
 @new_thread
 def __onDownloadStopped(api, gid):
     sleep(6)
