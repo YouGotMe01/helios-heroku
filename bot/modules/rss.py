@@ -341,7 +341,7 @@ def rss_monitor(context):
             LOGGER.info(f"Feed Title: {feed_title}")
 
         except Exception as e:
-            LOGGER.error(f"Error occurred while
+            LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
