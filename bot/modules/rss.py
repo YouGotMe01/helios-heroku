@@ -257,12 +257,10 @@ class DbManager:
 db_manager = DbManager(db_url)
 processed_urls = set()
 processed_feed_urls = set()  # Set to store processed feed URLs
-
-db_manager = DbManager(db_url)
-processed_urls = set()
-processed_feed_urls = set()  # Set to store processed feed URLs
-
 def rss_monitor(context):
+    db_manager = DbManager(db_url)
+    processed_feed_urls = set()  # Set to store processed feed URLs
+
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
 
@@ -277,6 +275,9 @@ def rss_monitor(context):
             if my_feed_url is None or my_feed_url == '':
                 LOGGER.warning(f"No feed URL available for feed: {name}")
                 continue
+
+            # Reset the processed URLs set for this feed
+            processed_urls = set()
 
             # Skip processing if the feed URL has already been processed
             if my_feed_url in processed_feed_urls:
@@ -336,13 +337,14 @@ def rss_monitor(context):
             # Mark the feed URL as processed
             processed_feed_urls.add(my_feed_url)
 
-            # Log the feed title
+            # Log the feed title and number of entries processed
+            LOGGER.info(f"Processed {len(processed_urls)} entries for feed: {name}")
             LOGGER.info(f"Feed Name: {name}")
             LOGGER.info(f"Feed Title: {feed_title}")
 
         except Exception as e:
             LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
-
+            
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
