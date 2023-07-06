@@ -6,6 +6,7 @@ import cloudscraper
 import re
 import feedparser
 import time
+import hashlib
 from bs4 import BeautifulSoup
 from time import sleep
 from psycopg2 import DatabaseError
@@ -257,6 +258,10 @@ db_manager = DbManager(db_url)
 processed_urls = set()
 processed_feed_urls = set()  # Set to store processed feed URLs
 
+db_manager = DbManager(db_url)
+processed_urls = set()
+processed_feed_urls = set()  # Set to store processed feed URLs
+
 def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
@@ -289,7 +294,7 @@ def rss_monitor(context):
                 entry_id = entry.get('id')  # Unique identifier for the entry, if available
 
                 # Generate a unique identifier for the entry
-                identifier = entry_id or f"{entry_title}-{entry_link}"
+                identifier = hashlib.md5(f"{my_feed_url}-{entry_link}".encode()).hexdigest()
 
                 # Skip processing if the entry identifier has already been processed
                 if identifier in processed_urls:
@@ -336,10 +341,7 @@ def rss_monitor(context):
             LOGGER.info(f"Feed Title: {feed_title}")
 
         except Exception as e:
-            LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
-
-    LOGGER.info("RSS monitor completed successfully.")
-
+            LOGGER.error(f"Error occurred while
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
