@@ -234,10 +234,10 @@ db_manager = DbManager(db_url)
 
 processed_urls = set()
 
-processed_feed_urls = set()  # Set to store processed feed URLs
+processed_feed_urls = set()  
 def rss_monitor(context):
     db_manager = DbManager(db_url)
-    processed_feed_urls = set()  # Set to store processed feed URLs
+    processed_feed_urls = set() 
 
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
@@ -248,20 +248,15 @@ def rss_monitor(context):
             with db_manager.get_connection() as conn, conn.cursor() as cur:
                 cur.execute("SELECT last_title, feed_url FROM rss_data WHERE name = %s", (name,))
                 row = cur.fetchone()
-                my_last_title = row[0] if row else None
-                my_feed_url = row[1] if row else None
+                last_title = row[0] if row else None
+                feed_url = row[1] if row else None
 
-            if my_feed_url is None or my_feed_url == '':
+            if feed_url is None or feed_url == '':
                 LOGGER.warning(f"No feed URL available for feed: {name}")
                 continue
-
-            # Reset the processed URLs set for this feed
             processed_urls = set()
-
-            # Skip processing if the feed URL has already been processed
             if feed_url in processed_feed_urls:
                 continue
-
             rss_d = feedparser.parse(feed_url)
             if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {feed_url}")
@@ -271,32 +266,22 @@ def rss_monitor(context):
             for entry in rss_d.entries:
                 entry_link = entry.get('link')
                 entry_title = entry.get('title')
-                entry_id = entry.get('id')  # Unique identifier for the entry, if available
-
-                # Generate a unique identifier for the entry
+                entry_id = entry.get('id')                  
                 identifier = hashlib.md5(f"{feed_url}-{entry_link}".encode()).hexdigest()
-
-                # Skip processing if the entry identifier has already been processed
                 if identifier in processed_urls:
                     continue
-
-                # Mark the entry identifier as processed
                 processed_urls.add(identifier)
 
                 if RSS_COMMAND is not None:
-                    # Replace 'url' with the appropriate variable or URL to scrape for magnet links
                     magnet_url = entry_link
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
                     html = scraper.get(magnet_url).text
                     soup = BeautifulSoup(html, 'html.parser')
-
                     for a_tag in soup.find_all('a', attrs={'href': re.compile(r"^magnet")}):
                         magnet_url = a_tag.get('href')
                         title = entry_title.replace('>', '').replace('<', '')
-
                         if (magnet_url, title) not in magnets:
                             magnets.add((magnet_url, title))
-
                     for magnet_url, title in magnets:
                         feed_msg = f"/{RSS_COMMAND} {magnet_url}"
                         sendRss(feed_msg, context.bot)
@@ -305,18 +290,11 @@ def rss_monitor(context):
                     feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
                     sendRss(feed_msg, context.bot)
 
-                # Update the last processed entry's title in the database
                 db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title, cur_last_title=entry_title)
-
-            # Update the feed title in the database
             feed_title = rss_d.feed.get('title', '')
             if feed_title:
                 db_manager.update_feed_title(name, feed_title)
-
-            # Mark the feed URL as processed
             processed_feed_urls.add(feed_url)
-
-            # Log the feed title and number of entries processed
             LOGGER.info(f"Processed {len(processed_urls)} entries for feed: {name}")
             LOGGER.info(f"Feed Name: {name}")
             LOGGER.info(f"Feed Title: {feed_title}")
