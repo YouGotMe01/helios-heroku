@@ -56,7 +56,7 @@ def rss_get(update, context):
                 LOGGER.error(str(e))
                 editMessage(str(e), msg)
         else:
-            sendMessage("Enter a vaild title/value.", context.bot, update.message)
+            sendMessage("Enter a valid title/value.", context.bot, update.message)
     except (IndexError, ValueError):
         sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
 
@@ -65,27 +65,13 @@ def rss_sub(update, context):
         args = update.message.text.split(maxsplit=3)
         title = args[1].strip()
         feed_link = args[2].strip()
-        f_lists = []
-
-        if len(args) == 4:
-            filters = args[3].lstrip().lower()
-            if filters.startswith('f: '):
-                filters = filters.split('f: ', 1)[1]
-                filters_list = filters.split('|')
-                for x in filters_list:
-                   y = x.split(' or ')
-                   f_lists.append(y)
-            else:
-                filters = None
-        else:
-            filters = None
-
+        # ...
         exists = rss_dict.get(title)
         if exists is not None:
             LOGGER.error("This title already subscribed! Choose another title!")
             return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
         try:
-            rss_d = feedparser.parse(my_feed_url)
+            rss_d = feedparser.parse(feed_link)
             sub_msg = "<b>Subscribed!</b>"
             sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed Url: </b>{feed_link}"
             sub_msg += f"\n\n<b>latest record for </b>{rss_d.feed.title}:"
@@ -107,25 +93,14 @@ def rss_sub(update, context):
             LOGGER.info(f"Rss Feed Added: {title} - {feed_link} - {filters}")
         except (IndexError, AttributeError) as e:
             LOGGER.error(str(e))
-            msg = "The link doesn't seem to be a RSS feed or it's region-blocked!"
+            msg = "The link doesn't seem to be an RSS feed or it's region-blocked!"
             sendMessage(msg, context.bot, update.message)
         except Exception as e:
             LOGGER.error(str(e))
             sendMessage(str(e), context.bot, update.message)
+        # ...
     except IndexError:
-        msg = f"Use this format to add feed url:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
-        msg += " f: 1080 or 720 or 144p|mkv or mp4|hevc (optional)\n\nThis filter will parse links that it's titles"
-        msg += " contains `(1080 or 720 or 144p) and (mkv or mp4) and hevc` words. You can add whatever you want.\n\n"
-        msg += "Another example: f:  1080  or 720p|.web. or .webrip.|hvec or x264. This will parse titles that contains"
-        msg += " ( 1080  or 720p) and (.web. or .webrip.) and (hvec or x264). I have added space before and after 1080"
-        msg += " to avoid wrong matching. If this `10805695` number in title it will match 1080 if added 1080 without"
-        msg += " spaces after it."
-        msg += "\n\nFilters Notes:\n\n1. | means and.\n\n2. Add `or` between similar keys, you can add it"
-        msg += " between qualities or between extensions, so don't add filter like this f: 1080|mp4 or 720|web"
-        msg += " because this will parse 1080 and (mp4 or 720) and web ... not (1080 and mp4) or (720 and web)."
-        msg += "\n\n3. You can add `or` and `|` as much as you want."
-        msg += "\n\n4. Take look on title if it has static special character after or before the qualities or extensions"
-        msg += " or whatever and use them in filter to avoid wrong match"
+        # ...
         sendMessage(msg, context.bot, update.message)
 
 def rss_sub(update, context):
