@@ -201,6 +201,7 @@ class DbManager:
              LOGGER.warning(f"No feed URL available for feed: {name}")
              return
         self.create_feed_url_column()
+        self.create_feed_title_column() # add this line
         with self.get_connection() as conn, conn.cursor() as cur:
              cur.execute(
                  "SELECT name FROM rss_data WHERE feed_url = %s AND last_updated > NOW() - INTERVAL '1 HOUR'",
@@ -223,7 +224,7 @@ class DbManager:
                      cur.execute(
                          "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s, name = %s, last_updated = NOW() WHERE name = %s AND last_title = %s",
                          (feed_url, new_title, last_link, last_title, name, name, cur_last_title))
- 
+
     def update_feed_title(self, name, feed_title):
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("UPDATE rss_data SET feed_title = %s WHERE name = %s", (feed_title, name))
