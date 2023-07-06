@@ -284,11 +284,17 @@ def rss_monitor(context):
             for entry in rss_d.entries:
                 entry_link = entry.get('link')
                 entry_title = entry.get('title')
-                if entry_title == my_last_title or entry_title in processed_urls:
-                    continue  # Skip processing if the entry has already been processed
+                entry_id = entry.get('id')  # Unique identifier for the entry, if available
 
-                # Mark the entry title as processed
-                processed_urls.add(entry_title)
+                # Skip processing if the entry has already been processed
+                if entry_id in processed_urls:
+                    continue
+
+                # Generate a unique identifier for the entry
+                identifier = entry_id or f"{entry_title}-{entry_link}"
+
+                # Mark the entry as processed
+                processed_urls.add(identifier)
 
                 if RSS_COMMAND is not None:
                     # Replace 'url' with the appropriate variable or URL to scrape for magnet links
@@ -310,20 +316,28 @@ def rss_monitor(context):
                 else:
                     feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
+                    sendRss(feed_msg, context.bot)
 
-            # Update the feed URL and title in the database
-            new_title = "New Feed Title"  # Replace with the new title you want to set
-            db_manager.rss_update(name, my_feed_url, entry_link, entry_title, my_last_title, new_title=new_title)
+                # Update the last processed entry's title in the database
+                db_manager.rss_update(name, my_feed_url, entry_link, entry_title, my_last_title, cur_last_title=entry_title)
+
+            # Update the feed title in the database
+            feed_title = rss_d.feed.get('title', '')
+            if feed_title:
+                db_manager.update_feed_title(name, feed_title)
+
+            # Mark the feed URL as processed
+            processed_feed_urls.add(my_feed_url)
 
             # Log the feed title
             LOGGER.info(f"Feed Name: {name}")
-            LOGGER.info(f"Feed Title: {rss_d.feed.get('title', '')}")
+            LOGGER.info(f"Feed Title: {feed_title}")
 
         except Exception as e:
             LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
 
     LOGGER.info("RSS monitor completed successfully.")
- 
+
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
