@@ -253,12 +253,14 @@ class DbManager:
             cur.execute("UPDATE rss_data SET feed_title = %s WHERE name = %s", (feed_title, name))
             conn.commit()
             
-db_manager = DbManager(db_url)  
+db_manager = DbManager(db_url)
+processed_urls = set()
+processed_feed_urls = set()  # Set to store processed feed URLs
+
 def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
-    processed_urls = set()
-    processed_feed_urls = set()  # Set to store processed feed URLs
+
     for name, data in rss_saver.items():
         try:
             with db_manager.get_connection() as conn, conn.cursor() as cur:
@@ -286,14 +288,14 @@ def rss_monitor(context):
                 entry_title = entry.get('title')
                 entry_id = entry.get('id')  # Unique identifier for the entry, if available
 
-                # Skip processing if the entry has already been processed
-                if entry_id in processed_urls:
-                    continue
-
                 # Generate a unique identifier for the entry
                 identifier = entry_id or f"{entry_title}-{entry_link}"
 
-                # Mark the entry as processed
+                # Skip processing if the entry identifier has already been processed
+                if identifier in processed_urls:
+                    continue
+
+                # Mark the entry identifier as processed
                 processed_urls.add(identifier)
 
                 if RSS_COMMAND is not None:
@@ -337,6 +339,7 @@ def rss_monitor(context):
             LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
 
     LOGGER.info("RSS monitor completed successfully.")
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
