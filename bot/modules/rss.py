@@ -176,6 +176,7 @@ db_url = os.environ.get('DATABASE_URL')
 class DbManager:
     def __init__(self, db_url):
         self.db_url = db_url
+        self.processed_feed_urls = set()
 
     def get_connection(self):
         return psycopg2.connect(self.db_url)
@@ -230,7 +231,9 @@ class DbManager:
             conn.commit()
             
 db_manager = DbManager(db_url)
+
 processed_urls = set()
+
 processed_feed_urls = set()  # Set to store processed feed URLs
 def rss_monitor(context):
     db_manager = DbManager(db_url)
@@ -238,6 +241,7 @@ def rss_monitor(context):
 
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
+        print(list(rss_saver.keys()))
 
     for name, data in rss_saver.items():
         try:
