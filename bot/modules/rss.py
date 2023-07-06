@@ -258,8 +258,7 @@ def rss_monitor(context):
 
             magnets = set()
             cur_last_title = None # define cur_last_title variable
-            for entry(more code)
-in rss_d.entries:
+            for entry in rss_d.entries:
                 entry_link = entry.get('link')
                 entry_title = entry.get('title')
                 entry_id = entry.get('id')                  
