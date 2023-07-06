@@ -196,40 +196,33 @@ class DbManager:
             if not cur.fetchone():
                 cur.execute("ALTER TABLE rss_data ADD COLUMN feed_title TEXT")
 
-   def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None, new_title=None):
-       if feed_url is None or feed_url == '':
-            LOGGER.warning(f"No feed URL available for feed: {name}")
-            return
+    def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None, new_title=None):
+        if feed_url is None or feed_url == '':
+             LOGGER.warning(f"No feed URL available for feed: {name}")
+             return
+        self.create_feed_url_column()
+        with self.get_connection() as conn, conn.cursor() as cur:
+             cur.execute(
+                 "SELECT name FROM rss_data WHERE feed_url = %s AND last_updated > NOW() - INTERVAL '1 HOUR'",
+                 (feed_url,))
+             row = cur.fetchone()
+             if row and row[0] != name:
+                 LOGGER.warning(f"Feed URL already exists for feed: {row[0]}")
+                 return
 
-       self.create_feed_url_column()
-
-       # Establish a connection to the database and create a cursor
-       with self.get_connection() as conn, conn.cursor() as cur:
-            # Check if there is already a feed with the same URL but different name
-            cur.execute(
-                "SELECT name FROM rss_data WHERE feed_url = %s AND last_updated > NOW() - INTERVAL '1 HOUR'",
-                (feed_url,))
-            row = cur.fetchone()
-            if row and row[0] != name:
-                LOGGER.warning(f"Feed URL already exists for feed: {row[0]}")
-                return
-
-            if cur_last_title is None:
-            # Insert a new record into the rss_data table
-                cur.execute(
-                    "INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
-                    (name, feed_url, last_link, last_title))
-            else:
-                if new_title is None:
-                    # Update an existing record in the rss_data table
-                    cur.execute(
-                        "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s, last_updated = NOW() WHERE name = %s AND last_title = %s",
-                        (feed_url, "", last_link, last_title, name, cur_last_title))
-                else:
-                    # Update an existing record in the rss_data table with a new name
-                    cur.execute(
-                        "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s, name = %s, last_updated = NOW() WHERE name = %s AND last_title = %s",
-                        (feed_url, new_title, last_link, last_title, name, name, cur_last_title))
+             if cur_last_title is None:
+                 cur.execute(
+                     "INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
+                     (name, feed_url, last_link, last_title))
+             else:
+                 if new_title is None:
+                     cur.execute(
+                         "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s, last_updated = NOW() WHERE name = %s AND last_title = %s",
+                         (feed_url, "", last_link, last_title, name, cur_last_title))
+                 else:
+                     cur.execute(
+                         "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s, name = %s, last_updated = NOW() WHERE name = %s AND last_title = %s",
+                         (feed_url, new_title, last_link, last_title, name, name, cur_last_title))
  
     def update_feed_title(self, name, feed_title):
         with self.get_connection() as conn, conn.cursor() as cur:
