@@ -196,6 +196,7 @@ def rss_set_update(update, context):
             
 LOGGER = logging.getLogger(__name__)
 db_url = os.environ.get('DATABASE_URL')
+
 class DbManager:
     def __init__(self, db_url):
         self.db_url = db_url
@@ -208,7 +209,13 @@ class DbManager:
             cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'rss_data' AND column_name = 'feed_url'")
             if not cur.fetchone():
                 cur.execute("ALTER TABLE rss_data ADD COLUMN feed_url TEXT")
-                
+
+    def create_feed_title_column(self):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'rss_data' AND column_name = 'feed_title'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE rss_data ADD COLUMN feed_title TEXT")
+
     def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None, new_title=None):
         if feed_url is None or feed_url == '':
             LOGGER.warning(f"No feed URL available for feed: {name}")
@@ -229,14 +236,20 @@ class DbManager:
             else:
                 if new_title is None:
                     cur.execute(
-                        "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
-                        (feed_url, last_link, last_title, name, cur_last_title))
+                        "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s WHERE name = %s AND last_title = %s",
+                        (feed_url, "", last_link, last_title, name, cur_last_title))
                 else:
                     cur.execute(
-                        "UPDATE rss_data SET feed_url = %s, last_link = %s, last_title = %s, name = %s WHERE name = %s AND last_title = %s",
-                        (feed_url, last_link, last_title, new_title, name, cur_last_title))
-    
+                        "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s, name = %s WHERE name = %s AND last_title = %s",
+                        (feed_url, new_title, last_link, last_title, name, name, cur_last_title))
+
+    def update_feed_title(self, name, feed_title):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("UPDATE rss_data SET feed_title = %s WHERE name = %s", (feed_title, name))
+            conn.commit()
+            
 db_manager = DbManager(db_url)  
+
 def rss_monitor(context):
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
@@ -296,10 +309,14 @@ def rss_monitor(context):
             new_title = "New Feed Title"  # Replace with the new title you want to set
             db_manager.rss_update(name, my_feed_url, entry_link, entry_title, my_last_title, new_title=new_title)
 
+            # Log the feed title
+            LOGGER.info(f"Feed Name: {name}")
+            LOGGER.info(f"Feed Title: {rss_d.feed.get('title', '')}") 
+
         except Exception as e:
             LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
 
-    LOGGER.info("RSS monitor completed successfully.")    
+    LOGGER.info("RSS monitor completed successfully.")
     
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
