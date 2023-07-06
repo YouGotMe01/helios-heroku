@@ -103,24 +103,22 @@ def rss_sub(update, context):
         # ...
         sendMessage(msg, context.bot, update.message)
 
-def rss_sub(update, context):
+def rss_unsub(update, context):
     try:
-        args = update.message.text.split(maxsplit=3)
-        title = args[1].strip()
-        feed_link = args[2].strip()
-        # ...
-
-        db_manager.rss_add(title, feed_link, last_link, last_title, filters)
-        with rss_dict_lock:
-            if len(rss_dict) == 0:
-                rss_job.enabled = True
-            rss_dict[title] = [feed_link, last_link, last_title, f_lists]
-        # ...
-
+        title = context.args[0]
+        exists = rss_dict.get(title)
+        if exists is None:
+            msg = "Rss link not exists! Nothing removed!"
+            LOGGER.error(msg)
+            sendMessage(msg, context.bot, update.message)
+        else:
+            db_manager.rss_delete(title)
+            with rss_dict_lock:
+                del rss_dict[title]
+            sendMessage(f"Rss link with Title: <code>{title}</code> has been removed!", context.bot, update.message)
+            LOGGER.info(f"Rss link with Title: {title} has been removed!")
     except IndexError:
-        # ...
-        sendMessage(msg, context.bot, update.message)
-
+        sendMessage(f"Use this format to remove feed url:\n/{BotCommands.RssUnSubCommand} Title", context.bot, update.message)
 
 def rss_settings(update, context):
     buttons = button_build.ButtonMaker()
