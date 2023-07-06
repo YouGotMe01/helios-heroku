@@ -109,15 +109,18 @@ def rss_sub(update, context):
         title = args[1].strip()
         feed_link = args[2].strip()
         # ...
+
         db_manager.rss_add(title, feed_link, last_link, last_title, filters)
         with rss_dict_lock:
             if len(rss_dict) == 0:
                 rss_job.enabled = True
             rss_dict[title] = [feed_link, last_link, last_title, f_lists]
         # ...
+
     except IndexError:
         # ...
         sendMessage(msg, context.bot, update.message)
+
 
 def rss_settings(update, context):
     buttons = button_build.ButtonMaker()
