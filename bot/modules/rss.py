@@ -39,7 +39,7 @@ def rss_get(update, context):
         if feed_url is not None and count > 0:
             try:
                 msg = sendMessage(f"Getting the last <b>{count}</b> item(s) from {title}", context.bot, update.message)
-                rss_d = feedparser.parse(my_feed_url)
+                rss_d = feedparser.parse(feed_url)
                 item_info = ""
                 for item_num in range(count):
                     try:
@@ -201,7 +201,7 @@ class DbManager:
             LOGGER.warning(f"No feed URL available for feed: {name}")
             return
 
-        self.create_feed_url_column()  # Add this line to create the column if necessary
+        self.create_feed_url_column()  
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 "SELECT name FROM rss_data WHERE feed_url = %s AND last_updated > NOW() - INTERVAL '1 HOUR'",
@@ -259,12 +259,12 @@ def rss_monitor(context):
             processed_urls = set()
 
             # Skip processing if the feed URL has already been processed
-            if my_feed_url in processed_feed_urls:
+            if feed_url in processed_feed_urls:
                 continue
 
-            rss_d = feedparser.parse(my_feed_url)
+            rss_d = feedparser.parse(feed_url)
             if not rss_d.entries:
-                LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {my_feed_url}")
+                LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {feed_url}")
                 continue
 
             magnets = set()
@@ -274,7 +274,7 @@ def rss_monitor(context):
                 entry_id = entry.get('id')  # Unique identifier for the entry, if available
 
                 # Generate a unique identifier for the entry
-                identifier = hashlib.md5(f"{my_feed_url}-{entry_link}".encode()).hexdigest()
+                identifier = hashlib.md5(f"{feed_url}-{entry_link}".encode()).hexdigest()
 
                 # Skip processing if the entry identifier has already been processed
                 if identifier in processed_urls:
@@ -306,7 +306,7 @@ def rss_monitor(context):
                     sendRss(feed_msg, context.bot)
 
                 # Update the last processed entry's title in the database
-                db_manager.rss_update(name, my_feed_url, entry_link, entry_title, my_last_title, cur_last_title=entry_title)
+                db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title, cur_last_title=entry_title)
 
             # Update the feed title in the database
             feed_title = rss_d.feed.get('title', '')
@@ -314,7 +314,7 @@ def rss_monitor(context):
                 db_manager.update_feed_title(name, feed_title)
 
             # Mark the feed URL as processed
-            processed_feed_urls.add(my_feed_url)
+            processed_feed_urls.add(feed_url)
 
             # Log the feed title and number of entries processed
             LOGGER.info(f"Processed {len(processed_urls)} entries for feed: {name}")
