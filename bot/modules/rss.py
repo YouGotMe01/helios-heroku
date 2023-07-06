@@ -233,7 +233,6 @@ db_manager = DbManager(db_url)
 
 processed_urls = set()
 
-processed_feed_urls = set()  
 def rss_monitor(context):
     db_manager = DbManager(db_url)
     processed_feed_urls = set() 
@@ -289,7 +288,11 @@ def rss_monitor(context):
                     feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
                     sendRss(feed_msg, context.bot)
 
-                db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title, cur_last_title=entry_title)
+                if cur_last_title is None:
+                    db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title)
+                else:
+                    db_manager.rss_update(name, feed_url, entry_link, '', cur_last_title, new_title=entry_title)
+
             feed_title = rss_d.feed.get('title', '')
             if feed_title:
                 db_manager.update_feed_title(name, feed_title)
