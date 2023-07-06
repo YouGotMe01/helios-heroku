@@ -36,7 +36,7 @@ class TgUploader:
         self.isPrivate = listener.message.chat.type in ['private', 'group']
         self.__app = app
         self.__user_id = listener.message.from_user.id
-    
+        
     def upload(self, o_files):
         for dirpath, subdir, files in sorted(walk(self.__path)):
             for file_ in sorted(files):
@@ -51,11 +51,8 @@ class TgUploader:
                             self.__corrupted += 1
                             continue
                     except Exception as e:
-                        if self.__is_cancelled:
-                            return
-                        else:
-                            LOGGER.error(e)
-                            continue
+                        if self.__listener is not None:
+                            self.__listener.onUploadError(str(e)) # Add this line
                     self.__upload_file(up_path, file_, dirpath)
                     if self.__is_cancelled:
                         return
@@ -66,10 +63,13 @@ class TgUploader:
         if self.__listener.seed and not self.__listener.newDir:
             clean_unwanted(self.__path)
         if self.__total_files <= self.__corrupted:
-            return self.__listener.onUploadError('Files Corrupted. Check logs')
+            if self.__listener is not None:
+                self.__listener.onUploadError('Files Corrupted. Check logs') # Add this line
+            return
         LOGGER.info(f"Leech Completed: {self.name}")
         size = get_readable_file_size(self.__size)
         self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
+    
                 
     def __upload_file(self, up_path, file_, dirpath):
         fsize = ospath.getsize(up_path)
