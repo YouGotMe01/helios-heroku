@@ -228,10 +228,6 @@ class DbManager:
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("UPDATE rss_data SET feed_title = %s WHERE name = %s", (feed_title, name))
             conn.commit()
-            
-db_manager = DbManager(db_url)
-
-processed_urls = set()
 
 def rss_monitor(context):
     db_manager = DbManager(db_url)
@@ -261,7 +257,9 @@ def rss_monitor(context):
                 continue
 
             magnets = set()
-            for entry in rss_d.entries:
+            cur_last_title = None # define cur_last_title variable
+            for entry(more code)
+in rss_d.entries:
                 entry_link = entry.get('link')
                 entry_title = entry.get('title')
                 entry_id = entry.get('id')                  
@@ -292,6 +290,7 @@ def rss_monitor(context):
                     db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title)
                 else:
                     db_manager.rss_update(name, feed_url, entry_link, '', cur_last_title, new_title=entry_title)
+                    cur_last_title = entry_title # update cur_last_title variable
 
             feed_title = rss_d.feed.get('title', '')
             if feed_title:
