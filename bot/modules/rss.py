@@ -66,11 +66,16 @@ def rss_sub(update, context):
         args = update.message.text.split(maxsplit=3)
         title = args[1].strip()
         feed_link = args[2].strip()
-        # ...
+        feed_title = args[3].strip()  # Assuming the feed title is provided as an argument
+
         exists = rss_dict.get(title)
         if exists is not None:
             LOGGER.error("This title already subscribed! Choose another title!")
             return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
+
+        # Create a dictionary with 'url' and 'title' attributes
+        feed_data = {'url': feed_link, 'title': feed_title}
+
         try:
             rss_d = feedparser.parse(feed_link)
             sub_msg = "<b>Subscribed!</b>"
@@ -86,10 +91,12 @@ def rss_sub(update, context):
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
             db_manager.rss_add(title, feed_link, last_link, last_title, filters)
+
             with rss_dict_lock:
                 if len(rss_dict) == 0:
                     rss_job.enabled = True
-                rss_dict[title] = [feed_link, last_link, last_title, f_lists]
+                rss_dict[title] = [feed_data]
+
             sendMessage(sub_msg, context.bot, update.message)
             LOGGER.info(f"Rss Feed Added: {title} - {feed_link} - {filters}")
         except (IndexError, AttributeError) as e:
@@ -99,10 +106,10 @@ def rss_sub(update, context):
         except Exception as e:
             LOGGER.error(str(e))
             sendMessage(str(e), context.bot, update.message)
-        # ...
     except IndexError:
         # ...
         sendMessage(msg, context.bot, update.message)
+
 
 def rss_unsub(update, context):
     try:
