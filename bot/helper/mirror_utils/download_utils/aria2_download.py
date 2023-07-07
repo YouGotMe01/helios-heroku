@@ -82,25 +82,53 @@ def __onDownloadStarted(api, gid):
         LOGGER.error(f"{e} onDownloadStart: {gid} check duplicate didn't pass")
 
 @new_thread
+def __onDownloadComplete(api, gid):
+    try:
+        download = api.get_download(gid)
+    except:
+        return
+    if download.followed_by_ids:
+        new_gid = download.followed_by_ids[0]
+        LOGGER.info(f'Gid changed from {gid} to {new_gid}')
+        if dl := getDownloadByGid(new_gid):
+            listener = dl.listener()
+            if BASE_URL is not None and listener.select:
+                api.client.force_pause(new_gid)
+                SBUTTONS = bt_selection_buttons(new_gid)
+                msg = "Your download paused. Choose files then press Done Selecting button to start downloading."
+                sendMarkup(msg, listener.bot, listener.message, SBUTTONS)
+    elif download.is_torrent:
+        if dl := getDownloadByGid(gid):
+            if hasattr(dl, 'listener'):
+                listener = dl.listener()
+                if hasattr(listener, 'uploaded'):
+                    LOGGER.info(f"Cancelling Seed: {download.name} onDownloadComplete")
+                    listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
+                    api.remove([download], force=True, files=True)
+    else:
+        LOGGER.info(f"onDownloadComplete: {download.name} - Gid: {gid}")
+        if dl := getDownloadByGid(gid):
+            dl.listener().onDownloadComplete()
+            api.remove([download], force=True, files=True)
 
+@new_thread
 def __onBtDownloadComplete(api, gid):
-    seed_start_t = api.get_download(gid)
+    seed_start_time = time()
+    sleep(1)
+    download = api.get_download(gid)
     LOGGER.info(f"onBtDownloadComplete: {download.name} - Gid: {gid}")
-    
-    dl = getDownloadByGid(gid)
-    if dl is not None:
+    if dl := getDownloadByGid(gid):
         listener = dl.listener()
         if listener.select:
             res = download.files
             for file_o in res:
                 f_path = file_o.path
-                if not file_o.selected and os.path.exists(f_path):
+                if not file_o.selected and ospath.exists(f_path):
                     try:
                         remove(f_path)
                     except:
                         pass
             clean_unwanted(download.dir)
-        
         if listener.seed:
             try:
                 api.set_options({'max-upload-limit': '0'}, [download])
@@ -108,9 +136,7 @@ def __onBtDownloadComplete(api, gid):
                 LOGGER.error(f'{e} You are not able to seed because you added global option seed-time=0 without adding specific seed_time for this torrent')
         else:
             api.client.force_pause(gid)
-        
         listener.onDownloadComplete()
-        
         if listener.seed:
             with download_dict_lock:
                 if listener.uid not in download_dict:
@@ -118,16 +144,13 @@ def __onBtDownloadComplete(api, gid):
                     return
                 download_dict[listener.uid] = AriaDownloadStatus(gid, listener)
                 download_dict[listener.uid].start_time = seed_start_time
-            
             LOGGER.info(f"Seeding started: {download.name} - Gid: {gid}")
-            
             download = download.live
-            
             if download.is_complete:
-                dl = getDownloadByGid(gid)
-                LOGGER.info(f"Cancelling Seed: {download.name}")
-                listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
-                api.remove([download], force=True, files=True)
+                if dl := getDownloadByGid(gid):
+                    LOGGER.info(f"Cancelling Seed: {download.name}")
+                    listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
+                    api.remove([download], force=True, files=True)
             else:
                 listener.uploaded = True
                 update_all_messages()
