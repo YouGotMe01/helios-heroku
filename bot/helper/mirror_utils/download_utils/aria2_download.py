@@ -112,7 +112,6 @@ def __onDownloadComplete(api, gid):
             api.remove([download], force=True, files=True)
 
 @new_thread
-download_dict = {}
 
 def __onBtDownloadComplete(api, gid):
     seed_start_time = time.time()
