@@ -21,6 +21,7 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper import button_build
 
+rss_dict = {}  
 rss_dict_lock = Lock()
 
 def rss_list(update, context):
@@ -254,8 +255,6 @@ class DbManager:
             cur.execute("DELETE FROM rss_data WHERE name = %s", (name,))
             cur.execute("DELETE FROM rss_history WHERE name = %s", (name,))
 
-rss_dict = {}  # Define the rss_dict variable
-
 def print_feed_info(feed_dict):
     for title, data in feed_dict.items():
         print(f"Title: {title}")
@@ -280,19 +279,23 @@ def rss_monitor(context, db_url):
                     LOGGER.warning(f"Invalid data structure for feed: {name}")
                     continue
 
-                feed_url = data[0].get('url')  # Access 'url' from the first dictionary in data_list
-                feed_title = data[0].get('title')  # Access 'title' from the first dictionary in data_list
+                feed_url = data.get('url')  # Access 'url' from the first dictionary in data_list
+                feed_title = data.get('title')  # Access 'title' from the first dictionary in data_list
 
                 if feed_url is None:
                     LOGGER.warning(f"No feed URL available for feed: {name}")
-                    continue  # Skip processing this feed if no feed URL is available
+                    continue  
 
                 with db_manager.get_connection() as conn, conn.cursor() as cur:
                     cur.execute("SELECT last_title, feed_url FROM rss_data WHERE name = %s", (name,))
                     row = cur.fetchone()
                     last_title = row[0] if row else None
                     db_feed_url = row[1] if row else None
-
+                    
+                print(f"Feed: {name}")
+                print(f"Feed URL: {feed_url}")
+                print(f"DB Feed URL: {db_feed_url}")
+                
                 if db_feed_url == feed_url:
                     LOGGER.info(f"Feed URL already exists for feed: {name}")
                 else:
