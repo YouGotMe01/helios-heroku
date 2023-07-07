@@ -183,14 +183,20 @@ class DbManager:
     def rss_update(self, name, feed_url, entry_link, entry_title, last_title, new_title=None):
         with self.get_connection() as conn, conn.cursor() as cur:
             if new_title is None:
-                cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
-                            (entry_title, name, feed_url, last_title))
+                cur.execute(
+                    "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
+                    (entry_title, name, feed_url, last_title))
+                
             else:
-                cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
-                            (new_title, name, feed_url, last_title))
+                cur.execute(
+                    "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
+                    (new_title, name, feed_url, last_title))
+                
 
-                cur.execute("INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)",
-                            (name, feed_url, entry_link, entry_title))
+                cur.execute(
+                    "INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)",
+                    (name, feed_url, entry_link, entry_title))
+                
 
     def update_feed_title(self, name, feed_title):
         with self.get_connection() as conn, conn.cursor() as cur:
@@ -198,89 +204,101 @@ class DbManager:
 
     def get_last_processed_entry(self, name, feed_url):
         with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("SELECT entry_link FROM rss_history WHERE name = %s AND feed_url = %s ORDER BY id DESC LIMIT 1", (name, feed_url))
+            cur.execute(
+                "SELECT entry_link FROM rss_history WHERE name = %s AND feed_url = %s ORDER BY id DESC LIMIT 1",
+                (name, feed_url))
+            
             row = cur.fetchone()
             return row[0] if row else None
 
     def rss(self, name, feed_url, feed_title=None):
         with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("INSERT INTO rss_data(name, feed_url, last_title, feed_title) VALUES (%s, %s, '', %s) ON CONFLICT DO NOTHING",
-                        (name, feed_url, feed_title))
+            cur.execute(
+                "INSERT INTO rss_data(name, feed_url, last_title, feed_title) VALUES (%s, %s, '', %s) ON CONFLICT DO NOTHING",
+                (name, feed_url, feed_title))
+            
 
     def rss_delete(self, name):
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("DELETE FROM rss_data WHERE name = %s", (name,))
             cur.execute("DELETE FROM rss_history WHERE name = %s", (name,))
-            
-def rss_monitor(context):
+
+
+def rss_monitor(context, db_url): 
     db_manager = DbManager(db_url)
 
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
         print(list(rss_saver.keys()))
 
-    for name, data in rss_saver.items():
+    for name, data_list in rss_saver.items():
         try:
-            with db_manager.get_connection() as conn, conn.cursor() as cur:
-                cur.execute("SELECT last_title, feed_url FROM rss_data WHERE name = %s", (name,))
-                row = cur.fetchone()
-                last_title = row[0] if row else None
-                feed_url = row[1] if row else None
-
-            if feed_url is None or feed_url == '':
-                LOGGER.warning(f"No feed URL available for feed: {name}")
-                continue
-
-            # Check if the feed URL is already in the rss_data table
-            if feed_url == data.get('url'):
-                LOGGER.info(f"Feed URL already exists for feed: {name}")
-            else:
-                # Insert the new feed URL into the rss_data table
-                db_manager.rss(name, data['url'], data['title'])  # Access 'url' and 'title' directly
-
-            rss_d = feedparser.parse(feed_url)
-            if not rss_d.entries:
-                LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {feed_url}")
-                continue
-
-            magnets = set()
-            cur_last_title = None
-            for entry in rss_d.entries:
-                entry_link = entry.get('link')
-                entry_title = entry.get('title')
-                entry_id = entry.get('id')
-                last_processed_entry = db_manager.get_last_processed_entry(name, feed_url)
-                if last_processed_entry == entry_link:
-                    LOGGER.info(f"Entry already processed for feed: {name}")
+            for data in data_list:
+                if not isinstance(data, dict):
+                    LOGGER.warning(f"Invalid data structure for feed: {name}")
                     continue
 
-                identifier = hashlib.md5(f"{feed_url}-{entry_link}".encode()).hexdigest()
+                feed_url = data[0].get('url')  # Access 'url' from the first dictionary in data_list
+                feed_title = data[0].get('title')  # Access 'title' from the first dictionary in data_list
 
-                if RSS_COMMAND is not None:
-                    magnet_url = entry_link
-                    scraper = cloudscraper.create_scraper(allow_brotli=False)
-                    html = scraper.get(magnet_url).text
-                    soup = BeautifulSoup(html, 'html.parser')
-                    for a_tag in soup.find_all('a', attrs={'href': re.compile(r"^magnet")}):
-                        magnet_url = a_tag.get('href')
-                        title = entry_title.replace('>', '').replace('<', '')
-                        if (magnet_url, title) not in magnets:
-                            magnets.add((magnet_url, title))
-                    for magnet_url, title in magnets:
-                        feed_msg = f"/{RSS_COMMAND} {magnet_url}"
+                if feed_url is None:
+                    LOGGER.warning(f"No feed URL available for feed: {name}")
+                    continue
+
+                with db_manager.get_connection() as conn, conn.cursor() as cur:
+                    cur.execute("SELECT last_title, feed_url FROM rss_data WHERE name = %s", (name,))
+                    row = cur.fetchone()
+                    last_title = row[0] if row else None
+                    db_feed_url = row[1] if row else None
+
+                if db_feed_url == feed_url:
+                    LOGGER.info(f"Feed URL already exists for feed: {name}")
+                else:
+                    db_manager.rss(name, feed_url, feed_title)
+
+                rss_d = feedparser.parse(feed_url)
+                if not rss_d.entries:
+                    LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {feed_url}")
+                    continue
+
+                magnets = set()
+                cur_last_title = None
+                for entry in rss_d.entries:
+                    entry_link = entry.get('link')
+                    entry_title = entry.get('title')
+                    entry_id = entry.get('id')
+                    last_processed_entry = db_manager.get_last_processed_entry(name, feed_url)
+                    if last_processed_entry == entry_link:
+                        LOGGER.info(f"Entry already processed for feed: {name}")
+                        continue
+
+                    identifier = hashlib.md5(f"{feed_url}-{entry_link}".encode()).hexdigest()
+
+                    if RSS_COMMAND is not None:
+                        magnet_url = entry_link
+                        scraper = cloudscraper.create_scraper(allow_brotli=False)
+                        html = scraper.get(magnet_url).text
+                        soup = BeautifulSoup(html, 'html.parser')
+                        for a_tag in soup.find_all('a', attrs={'href': re.compile(r"^magnet")}):
+                            magnet_url = a_tag.get('href')
+                            title = entry_title.replace('>', '').replace('<', '')
+                            if (magnet_url, title) not in magnets:
+                                magnets.add((magnet_url, title))
+                        for magnet_url, title in magnets:
+                            feed_msg = f"/{RSS_COMMAND} {magnet_url}"
+                            sendRss(feed_msg, context.bot)
+                    else:
+                        feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
+                        feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
                         sendRss(feed_msg, context.bot)
-                else:
-                    feed_msg = f"<b>Name: </b><code>{entry_title.replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{entry_link}</code>"
-                    sendRss(feed_msg, context.bot)
 
-                if cur_last_title is None:
-                    db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title)
-                    cur_last_title = entry_title
-                else:
-                    db_manager.rss_update(name, feed_url, entry_link, entry_title, cur_last_title)
-                    cur_last_title = entry_title
-
+                    if cur_last_title is None:
+                        db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title)
+                        cur_last_title = entry_title
+                    else:
+                        db_manager.rss_update(name, feed_url, entry_link, entry_title, cur_last_title)
+                        cur_last_title = entry_title
+                        
         except Exception as e:
             LOGGER.error(f"Error monitoring feed: {name} - Error: {str(e)}")
 
