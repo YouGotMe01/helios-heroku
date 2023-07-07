@@ -285,7 +285,7 @@ def rss_monitor(context, db_url):
 
                 if feed_url is None:
                     LOGGER.warning(f"No feed URL available for feed: {name}")
-                    continue
+                    continue  # Skip processing this feed if no feed URL is available
 
                 with db_manager.get_connection() as conn, conn.cursor() as cur:
                     cur.execute("SELECT last_title, feed_url FROM rss_data WHERE name = %s", (name,))
@@ -301,7 +301,7 @@ def rss_monitor(context, db_url):
                 rss_d = feedparser.parse(feed_url)
                 if not rss_d.entries:
                     LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {feed_url}")
-                    continue
+                    continue  # Skip processing this feed if no entries are found
 
                 magnets = set()
                 cur_last_title = None
