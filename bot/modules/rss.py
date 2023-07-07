@@ -254,6 +254,17 @@ class DbManager:
             cur.execute("DELETE FROM rss_data WHERE name = %s", (name,))
             cur.execute("DELETE FROM rss_history WHERE name = %s", (name,))
 
+rss_dict = {}  # Define the rss_dict variable
+
+def print_feed_info(feed_dict):
+    for title, data in feed_dict.items():
+        print(f"Title: {title}")
+        print(f"Feed URL: {data['url']}")
+        print(f"Feed Title: {data['title']}")
+        print()
+
+# Call the function with the rss_dict as an argument
+print_feed_info(rss_dict)
 
 def rss_monitor(context, db_url): 
     db_manager = DbManager(db_url)
