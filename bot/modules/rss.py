@@ -21,7 +21,6 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper import button_build
 
-rss_dict = {}  
 rss_dict_lock = Lock()
 
 def rss_list(update, context):
@@ -87,7 +86,7 @@ def rss_sub(update, context):
             LOGGER.error("This title already subscribed! Choose another title!")
             return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
         try:
-            rss_d = feedparse(feed_link)
+            rss_d = feedparser.parse(feed_link)
             sub_msg = "<b>Subscribed!</b>"
             sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed Url: </b>{feed_link}"
             sub_msg += f"\n\n<b>latest record for </b>{rss_d.feed.title}:"
@@ -245,18 +244,7 @@ class DbManager:
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("DELETE FROM rss_data WHERE name = %s", (name,))
             cur.execute("DELETE FROM rss_history WHERE name = %s", (name,))
-
-
-def print_feed_info(feed_dict):
-    for title, data in feed_dict.items():
-        print(f"Title: {title}")
-        print(f"Feed URL: {data['url']}")
-        print(f"Feed Title: {data['title']}")
-        print()
-
-# Call the function with the rss_dict as an argument
-print_feed_info(rss_dict)
-
+            
 def rss_monitor(context, db_url):
     db_manager = DbManager(db_url)
 
