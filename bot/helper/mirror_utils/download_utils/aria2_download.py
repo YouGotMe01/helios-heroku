@@ -113,7 +113,6 @@ def __onDownloadComplete(api, gid):
 
 @new_thread
 download_dict = {}
-download_dict_lock = Lock()
 
 def __onBtDownloadComplete(api, gid):
     seed_start_time = time.time()
