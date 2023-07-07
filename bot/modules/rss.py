@@ -195,9 +195,15 @@ class DbManager:
     def update_feed_title(self, name, feed_title):
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("UPDATE rss_data SET feed_title = %s WHERE name = %s", (feed_title, name))
+
+    def get_last_processed_entry(self, name, feed_url):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT entry_link FROM rss_history WHERE name = %s AND feed_url = %s ORDER BY id DESC LIMIT 1", (name, feed_url))
+            row = cur.fetchone()
+            return row[0] if row else None
+
 def rss_monitor(context):
     db_manager = DbManager(db_url)
-    processed_feed_urls = set() 
 
     with rss_dict_lock:
         rss_saver = rss_dict.copy()
@@ -215,11 +221,6 @@ def rss_monitor(context):
                 LOGGER.warning(f"No feed URL available for feed: {name}")
                 continue
 
-            if feed_url in processed_feed_urls:
-                LOGGER.info(f"Feed URL already processed for feed: {name}")
-                continue
-
-            processed_urls = set()
             rss_d = feedparser.parse(feed_url)
             if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {feed_url}")
@@ -230,11 +231,13 @@ def rss_monitor(context):
             for entry in rss_d.entries:
                 entry_link = entry.get('link')
                 entry_title = entry.get('title')
-                entry_id = entry.get('id')                  
-                identifier = hashlib.md5(f"{feed_url}-{entry_link}".encode()).hexdigest()
-                if identifier in processed_urls:
+                entry_id = entry.get('id')
+                last_processed_entry = db_manager.get_last_processed_entry(name, feed_url)
+                if last_processed_entry == entry_link:
+                    LOGGER.info(f"Entry already processed for feed: {name}")
                     continue
-                processed_urls.add(identifier)
+
+                identifier = hashlib.md5(f"{feed_url}-{entry_link}".encode()).hexdigest()
 
                 if RSS_COMMAND is not None:
                     magnet_url = entry_link
@@ -256,20 +259,13 @@ def rss_monitor(context):
 
                 if cur_last_title is None:
                     db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title)
+                    cur_last_title = entry_title
                 else:
-                    db_manager.rss_update(name, feed_url, entry_link, '', cur_last_title, new_title=entry_title)
+                    db_manager.rss_update(name, feed_url, entry_link, entry_title, cur_last_title)
                     cur_last_title = entry_title
 
-            feed_title = rss_d.feed.get('title', '')
-            if feed_title:
-                db_manager.update_feed_title(name, feed_title)
-            processed_feed_urls.add(feed_url) # add the processed feed URL to the set
-            LOGGER.info(f"Processed {len(processed_urls)} entries for feed: {name}")
-            LOGGER.info(f"Feed Name: {name}")
-            LOGGER.info(f"Feed Title: {feed_title}")
-
         except Exception as e:
-            LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
+            LOGGER.error(f"Error monitoring feed: {name} - Error: {str(e)}")
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
