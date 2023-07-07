@@ -223,10 +223,12 @@ class DbManager:
                 query = "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s"
                 parameters = (new_title, name, feed_url, last_title)
 
-                self.execute_query("INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)",
-                                   (name, feed_url, entry_link, entry_title))
-
             self.execute_query(query, parameters)
+
+            if new_title is not None:
+                query = "INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)"
+                parameters = (name, feed_url, entry_link, entry_title)
+                self.execute_query(query, parameters)
 
         except Exception as e:
             # Handle the exception or log the error
@@ -235,7 +237,9 @@ class DbManager:
     def update_feed_title(self, name, feed_title):
         try:
             query = "UPDATE rss_data SET feed_title = %s WHERE name = %s"
-            self.execute_query(query, (feed_title, name))
+            parameters = (feed_title, name)
+
+            self.execute_query(query, parameters)
 
         except Exception as e:
             # Handle the exception or log the error
@@ -273,14 +277,16 @@ class DbManager:
         try:
             queries = [
                 ("DELETE FROM rss_data WHERE name = %s", (name,)),
-                ("DELETE FROM rss_history WHERE name = %s", (name,))]
-         
+                ("DELETE FROM rss_history WHERE name = %s", (name,))
+            ]
+
             for query, parameters in queries:
                 self.execute_query(query, parameters)
 
         except Exception as e:
             # Handle the exception or log the error
             print(f"Error deleting RSS data: {str(e)}")
+
 
 def rss_monitor(context, db_url):
     db_manager = DbManager(db_url)
@@ -292,14 +298,11 @@ def rss_monitor(context, db_url):
     for name, data_list in rss_saver.items():
         try:
             for data in data_list:
-                if not isinstance(data, dict):
+                if not isinstance(data, dict) or 'url' not in data or 'title' not in data:
                     LOGGER.warning(f"Invalid data structure for feed: {name}")
-                    continue
-                if 'url' not in data or 'title' not in data:
-                    LOGGER.warning(f"Invalid data structure for feed: {name}. Missing required keys.")
-                    continue
-                feed_url = data['url']  # Access 'url' from the first dictionary in data_list
-                feed_title = data['title']  # Access 'title' from the first dictionary in data_list
+                    continue                
+                feed_url = data['url']  
+                feed_title = data['title']  
 
                 if feed_url is None:
                     LOGGER.warning(f"No feed URL available for feed: {name}")
