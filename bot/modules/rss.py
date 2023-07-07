@@ -236,7 +236,7 @@ def rss_monitor(context):
                 LOGGER.info(f"Feed URL already exists for feed: {name}")
             else:
                 # Insert the new feed URL into the rss_data table
-                db_manager.rss(name, data.get('url'), data.get('title'))
+                db_manager.rss(name, data['url'], data['title'])  # Access 'url' and 'title' directly
 
             rss_d = feedparser.parse(feed_url)
             if not rss_d.entries:
