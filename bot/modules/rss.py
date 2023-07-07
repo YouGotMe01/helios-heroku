@@ -202,6 +202,16 @@ class DbManager:
             row = cur.fetchone()
             return row[0] if row else None
 
+    def rss(self, name, feed_url, feed_title=None):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("INSERT INTO rss_data(name, feed_url, last_title, feed_title) VALUES (%s, %s, '', %s) ON CONFLICT DO NOTHING",
+                        (name, feed_url, feed_title))
+
+    def rss_delete(self, name):
+        with self.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM rss_data WHERE name = %s", (name,))
+            cur.execute("DELETE FROM rss_history WHERE name = %s", (name,))
+            
 def rss_monitor(context):
     db_manager = DbManager(db_url)
 
@@ -220,6 +230,13 @@ def rss_monitor(context):
             if feed_url is None or feed_url == '':
                 LOGGER.warning(f"No feed URL available for feed: {name}")
                 continue
+
+            # Check if the feed URL is already in the rss_data table
+            if feed_url == data.get('url'):
+                LOGGER.info(f"Feed URL already exists for feed: {name}")
+            else:
+                # Insert the new feed URL into the rss_data table
+                db_manager.rss(name, data.get('url'), data.get('title'))
 
             rss_d = feedparser.parse(feed_url)
             if not rss_d.entries:
