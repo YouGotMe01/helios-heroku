@@ -218,17 +218,14 @@ class DbManager:
                 cur.execute(
                     "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
                     (entry_title, name, feed_url, last_title))
-                
             else:
                 cur.execute(
                     "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
                     (new_title, name, feed_url, last_title))
-                
 
                 cur.execute(
                     "INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)",
                     (name, feed_url, entry_link, entry_title))
-                
 
     def update_feed_title(self, name, feed_title):
         with self.get_connection() as conn, conn.cursor() as cur:
@@ -239,7 +236,7 @@ class DbManager:
             cur.execute(
                 "SELECT entry_link FROM rss_history WHERE name = %s AND feed_url = %s ORDER BY id DESC LIMIT 1",
                 (name, feed_url))
-            
+
             row = cur.fetchone()
             return row[0] if row else None
 
@@ -248,12 +245,12 @@ class DbManager:
             cur.execute(
                 "INSERT INTO rss_data(name, feed_url, last_title, feed_title) VALUES (%s, %s, '', %s) ON CONFLICT DO NOTHING",
                 (name, feed_url, feed_title))
-            
 
     def rss_delete(self, name):
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("DELETE FROM rss_data WHERE name = %s", (name,))
             cur.execute("DELETE FROM rss_history WHERE name = %s", (name,))
+
 
 def print_feed_info(feed_dict):
     for title, data in feed_dict.items():
@@ -265,7 +262,7 @@ def print_feed_info(feed_dict):
 # Call the function with the rss_dict as an argument
 print_feed_info(rss_dict)
 
-def rss_monitor(context, db_url): 
+def rss_monitor(context, db_url):
     db_manager = DbManager(db_url)
 
     with rss_dict_lock:
@@ -284,21 +281,20 @@ def rss_monitor(context, db_url):
 
                 if feed_url is None:
                     LOGGER.warning(f"No feed URL available for feed: {name}")
-                    continue  
+                    continue
 
                 with db_manager.get_connection() as conn, conn.cursor() as cur:
                     cur.execute("SELECT last_title, feed_url FROM rss_data WHERE name = %s", (name,))
                     row = cur.fetchone()
                     last_title = row[0] if row else None
                     db_feed_url = row[1] if row else None
-                    
+
                 print(f"Feed: {name}")
                 print(f"Feed URL: {feed_url}")
                 print(f"DB Feed URL: {db_feed_url}")
-                
-                if db_feed_url == feed_url:
-                    LOGGER.info(f"Feed URL already exists for feed: {name}")
-                else:
+
+                if db_feed_url != feed_url:
+                    db_manager.rss_delete(name)
                     db_manager.rss(name, feed_url, feed_title)
 
                 rss_d = feedparser.parse(feed_url)
@@ -343,7 +339,7 @@ def rss_monitor(context, db_url):
                     else:
                         db_manager.rss_update(name, feed_url, entry_link, entry_title, cur_last_title)
                         cur_last_title = entry_title
-                        
+
         except Exception as e:
             LOGGER.error(f"Error monitoring feed: {name} - Error: {str(e)}")
 
