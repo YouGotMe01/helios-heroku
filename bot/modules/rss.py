@@ -60,34 +60,34 @@ def rss_get(update, context):
             sendMessage("Enter a valid title/value.", context.bot, update.message)
     except (IndexError, ValueError):
         sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
-
+        
 def rss_sub(update, context):
     try:
         args = update.message.text.split(maxsplit=3)
         title = args[1].strip()
         feed_link = args[2].strip()
-        feed_title = args[3].strip()  # Assuming the feed title is provided as an argument
+        feed_title = args[3].strip()
 
         exists = rss_dict.get(title)
         if exists is not None:
-            LOGGER.error("This title already subscribed! Choose another title!")
-            return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
+            LOGGER.error("This title is already subscribed! Choose another title!")
+            return sendMessage("This title is already subscribed! Choose another title!", context.bot, update.message)
 
-        # Create a dictionary with 'url' and 'title' attributes
-        feed_data = {'url': feed_link, 'title': feed_title}
+        feed_data = {'url': feed_link, 'title': feed_title}  # Create a dictionary with 'url' and 'title' attributes
 
         try:
             rss_d = feedparser.parse(feed_link)
             sub_msg = "<b>Subscribed!</b>"
-            sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed Url: </b>{feed_link}"
-            sub_msg += f"\n\n<b>latest record for </b>{rss_d.feed.title}:"
-            sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
+            sub_msg += f"\n\n<b>Title:</b> <code>{title}</code>\n<b>Feed Url:</b> <code>{feed_link}</code>"
+            sub_msg += f"\n\n<b>Latest record for {rss_d.feed.title}:</b>"
+            sub_msg += f"\n\n<b>Name:</b> <code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
             try:
                 link = rss_d.entries[0]['links'][1]['href']
             except IndexError:
                 link = rss_d.entries[0]['link']
-            sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
-            sub_msg += f"\n\n<b>Filters: </b><code>{filters}</code>"
+            sub_msg += f"\n\n<b>Link:</b> <code>{link}</code>"
+            sub_msg += f"\n\n<b>Filters:</b> <code>{filters}</code>"
+
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
             db_manager.rss_add(title, feed_link, last_link, last_title, filters)
@@ -95,7 +95,7 @@ def rss_sub(update, context):
             with rss_dict_lock:
                 if len(rss_dict) == 0:
                     rss_job.enabled = True
-                rss_dict[title] = [feed_data]
+                rss_dict[title] = feed_data  # Update rss_dict to use the feed_data dictionary
 
             sendMessage(sub_msg, context.bot, update.message)
             LOGGER.info(f"Rss Feed Added: {title} - {feed_link} - {filters}")
@@ -107,8 +107,7 @@ def rss_sub(update, context):
             LOGGER.error(str(e))
             sendMessage(str(e), context.bot, update.message)
     except IndexError:
-        # ...
-        sendMessage(msg, context.bot, update.message)
+        sendMessage(f"Use this format to subscribe:\n/{BotCommands.RssSubCommand} Title FeedURL FeedTitle", context.bot, update.message)
 
 
 def rss_unsub(update, context):
