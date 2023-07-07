@@ -82,40 +82,9 @@ def __onDownloadStarted(api, gid):
         LOGGER.error(f"{e} onDownloadStart: {gid} check duplicate didn't pass")
 
 @new_thread
-def __onDownloadComplete(api, gid):
-    try:
-        download = api.get_download(gid)
-    except:
-        return
-    if download.followed_by_ids:
-        new_gid = download.followed_by_ids[0]
-        LOGGER.info(f'Gid changed from {gid} to {new_gid}')
-        if dl := getDownloadByGid(new_gid):
-            listener = dl.listener()
-            if BASE_URL is not None and listener.select:
-                api.client.force_pause(new_gid)
-                SBUTTONS = bt_selection_buttons(new_gid)
-                msg = "Your download paused. Choose files then press Done Selecting button to start downloading."
-                sendMarkup(msg, listener.bot, listener.message, SBUTTONS)
-    elif download.is_torrent:
-        if dl := getDownloadByGid(gid):
-            if hasattr(dl, 'listener'):
-                listener = dl.listener()
-                if hasattr(listener, 'uploaded'):
-                    LOGGER.info(f"Cancelling Seed: {download.name} onDownloadComplete")
-                    listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
-                    api.remove([download], force=True, files=True)
-    else:
-        LOGGER.info(f"onDownloadComplete: {download.name} - Gid: {gid}")
-        if dl := getDownloadByGid(gid):
-            dl.listener().onDownloadComplete()
-            api.remove([download], force=True, files=True)
-
-@new_thread
 
 def __onBtDownloadComplete(api, gid):
-    seed_start_time = time.time()
-    download = api.get_download(gid)
+    seed_start_t = api.get_download(gid)
     LOGGER.info(f"onBtDownloadComplete: {download.name} - Gid: {gid}")
     
     dl = getDownloadByGid(gid)
