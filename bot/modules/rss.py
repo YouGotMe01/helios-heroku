@@ -206,45 +206,82 @@ class DbManager:
     def get_connection(self):
         return psycopg2.connect(self.db_url)
 
-    def rss_update(self, name, feed_url, entry_link, entry_title, last_title, new_title=None):
-        with self.get_connection() as conn, conn.cursor() as cur:
-            if new_title is None:
-                cur.execute(
-                    "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
-                    (entry_title, name, feed_url, last_title))
-            else:
-                cur.execute(
-                    "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
-                    (new_title, name, feed_url, last_title))
+    def execute_query(self, query, parameters=None):
+        with self.get_connection() as conn:
+            with conn.cursor() as cur:
+                if parameters:
+                    cur.execute(query, parameters)
+                else:
+                    cur.execute(query)
 
-                cur.execute(
-                    "INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)",
-                    (name, feed_url, entry_link, entry_title))
+    def rss_update(self, name, feed_url, entry_link, entry_title, last_title, new_title=None):
+        try:
+            if new_title is None:
+                query = "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s"
+                parameters = (entry_title, name, feed_url, last_title)
+            else:
+                query = "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s"
+                parameters = (new_title, name, feed_url, last_title)
+
+                self.execute_query("INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)",
+                                   (name, feed_url, entry_link, entry_title))
+
+            self.execute_query(query, parameters)
+
+        except Exception as e:
+            # Handle the exception or log the error
+            print(f"Error updating RSS: {str(e)}")
 
     def update_feed_title(self, name, feed_title):
-        with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("UPDATE rss_data SET feed_title = %s WHERE name = %s", (feed_title, name))
+        try:
+            query = "UPDATE rss_data SET feed_title = %s WHERE name = %s"
+            self.execute_query(query, (feed_title, name))
+
+        except Exception as e:
+            # Handle the exception or log the error
+            print(f"Error updating feed title: {str(e)}")
 
     def get_last_processed_entry(self, name, feed_url):
-        with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                "SELECT entry_link FROM rss_history WHERE name = %s AND feed_url = %s ORDER BY id DESC LIMIT 1",
-                (name, feed_url))
+        try:
+            query = "SELECT entry_link FROM rss_history WHERE name = %s AND feed_url = %s ORDER BY id DESC LIMIT 1"
+            parameters = (name, feed_url)
 
-            row = cur.fetchone()
+            with self.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, parameters)
+                    row = cur.fetchone()
+
             return row[0] if row else None
 
+        except Exception as e:
+            # Handle the exception or log the error
+            print(f"Error retrieving last processed entry: {str(e)}")
+            return None
+
     def rss(self, name, feed_url, feed_title=None):
-        with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO rss_data(name, feed_url, last_title, feed_title) VALUES (%s, %s, '', %s) ON CONFLICT DO NOTHING",
-                (name, feed_url, feed_title))
+        try:
+            query = "INSERT INTO rss_data(name, feed_url, last_title, feed_title) VALUES (%s, %s, '', %s) ON CONFLICT DO NOTHING"
+            parameters = (name, feed_url, feed_title)
+
+            self.execute_query(query, parameters)
+
+        except Exception as e:
+            # Handle the exception or log the error
+            print(f"Error inserting RSS data: {str(e)}")
 
     def rss_delete(self, name):
-        with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("DELETE FROM rss_data WHERE name = %s", (name,))
-            cur.execute("DELETE FROM rss_history WHERE name = %s", (name,))
-            
+        try:
+            queries = [
+                ("DELETE FROM rss_data WHERE name = %s", (name,)),
+                ("DELETE FROM rss_history WHERE name = %s", (name,))]
+         
+            for query, parameters in queries:
+                self.execute_query(query, parameters)
+
+        except Exception as e:
+            # Handle the exception or log the error
+            print(f"Error deleting RSS data: {str(e)}")
+
 def rss_monitor(context, db_url):
     db_manager = DbManager(db_url)
 
@@ -258,9 +295,11 @@ def rss_monitor(context, db_url):
                 if not isinstance(data, dict):
                     LOGGER.warning(f"Invalid data structure for feed: {name}")
                     continue
-
-                feed_url = data.get('url')  # Access 'url' from the first dictionary in data_list
-                feed_title = data.get('title')  # Access 'title' from the first dictionary in data_list
+                if 'url' not in data or 'title' not in data:
+                    LOGGER.warning(f"Invalid data structure for feed: {name}. Missing required keys.")
+                    continue
+                feed_url = data['url']  # Access 'url' from the first dictionary in data_list
+                feed_title = data['title']  # Access 'title' from the first dictionary in data_list
 
                 if feed_url is None:
                     LOGGER.warning(f"No feed URL available for feed: {name}")
