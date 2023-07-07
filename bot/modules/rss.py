@@ -176,60 +176,25 @@ db_url = os.environ.get('DATABASE_URL')
 class DbManager:
     def __init__(self, db_url):
         self.db_url = db_url
-        self.processed_feed_urls = set()
 
     def get_connection(self):
         return psycopg2.connect(self.db_url)
 
-    def create_feed_url_column(self):
+    def rss_update(self, name, feed_url, entry_link, entry_title, last_title, new_title=None):
         with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'rss_data' AND column_name = 'feed_url'")
-            if not cur.fetchone():
-                cur.execute("ALTER TABLE rss_data ADD COLUMN feed_url TEXT")
-            cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'rss_data' AND column_name = 'last_updated'")
-            if not cur.fetchone():
-                cur.execute("ALTER TABLE rss_data ADD COLUMN last_updated TIMESTAMP DEFAULT NOW()")
+            if new_title is None:
+                cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
+                            (entry_title, name, feed_url, last_title))
+            else:
+                cur.execute("UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s",
+                            (new_title, name, feed_url, last_title))
 
-    def create_feed_title_column(self):
-        with self.get_connection() as conn, conn.cursor() as cur:
-            cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'rss_data' AND column_name = 'feed_title'")
-            if not cur.fetchone():
-                cur.execute("ALTER TABLE rss_data ADD COLUMN feed_title TEXT")
-
-    def rss_update(self, name, feed_url, last_link, last_title, cur_last_title=None, new_title=None):
-        if feed_url is None or feed_url == '':
-             LOGGER.warning(f"No feed URL available for feed: {name}")
-             return
-        self.create_feed_url_column()
-        self.create_feed_title_column() # add this line
-        with self.get_connection() as conn, conn.cursor() as cur:
-             cur.execute(
-                 "SELECT name FROM rss_data WHERE feed_url = %s AND last_updated > NOW() - INTERVAL '1 HOUR'",
-                 (feed_url,))
-             row = cur.fetchone()
-             if row and row[0] != name:
-                 LOGGER.warning(f"Feed URL already exists for feed: {row[0]}")
-                 return
-
-             if cur_last_title is None:
-                 cur.execute(
-                     "INSERT INTO rss_data (name, feed_url, last_link, last_title) VALUES (%s, %s, %s, %s)",
-                     (name, feed_url, last_link, last_title))
-             else:
-                 if new_title is None:
-                     cur.execute(
-                         "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s, last_updated = NOW() WHERE name = %s AND last_title = %s",
-                         (feed_url, "", last_link, last_title, name, cur_last_title))
-                 else:
-                     cur.execute(
-                         "UPDATE rss_data SET feed_url = %s, feed_title = %s, last_link = %s, last_title = %s, name = %s, last_updated = NOW() WHERE name = %s AND last_title = %s",
-                         (feed_url, new_title, last_link, last_title, name, name, cur_last_title))
+                cur.execute("INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)",
+                            (name, feed_url, entry_link, entry_title))
 
     def update_feed_title(self, name, feed_title):
         with self.get_connection() as conn, conn.cursor() as cur:
             cur.execute("UPDATE rss_data SET feed_title = %s WHERE name = %s", (feed_title, name))
-            conn.commit()
-
 def rss_monitor(context):
     db_manager = DbManager(db_url)
     processed_feed_urls = set() 
@@ -249,16 +214,19 @@ def rss_monitor(context):
             if feed_url is None or feed_url == '':
                 LOGGER.warning(f"No feed URL available for feed: {name}")
                 continue
-            processed_urls = set()
+
             if feed_url in processed_feed_urls:
+                LOGGER.info(f"Feed URL already processed for feed: {name}")
                 continue
+
+            processed_urls = set()
             rss_d = feedparser.parse(feed_url)
             if not rss_d.entries:
                 LOGGER.warning(f"No entries found for feed: {name} - Feed URL: {feed_url}")
                 continue
 
             magnets = set()
-            cur_last_title = None # define cur_last_title variable
+            cur_last_title = None
             for entry in rss_d.entries:
                 entry_link = entry.get('link')
                 entry_title = entry.get('title')
@@ -290,19 +258,19 @@ def rss_monitor(context):
                     db_manager.rss_update(name, feed_url, entry_link, entry_title, last_title)
                 else:
                     db_manager.rss_update(name, feed_url, entry_link, '', cur_last_title, new_title=entry_title)
-                    cur_last_title = entry_title # update cur_last_title variable
+                    cur_last_title = entry_title
 
             feed_title = rss_d.feed.get('title', '')
             if feed_title:
                 db_manager.update_feed_title(name, feed_title)
-            processed_feed_urls.add(feed_url)
+            processed_feed_urls.add(feed_url) # add the processed feed URL to the set
             LOGGER.info(f"Processed {len(processed_urls)} entries for feed: {name}")
             LOGGER.info(f"Feed Name: {name}")
             LOGGER.info(f"Feed Title: {feed_title}")
 
         except Exception as e:
             LOGGER.error(f"Error occurred while processing feed: {name} - {str(e)}")
-            
+
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
