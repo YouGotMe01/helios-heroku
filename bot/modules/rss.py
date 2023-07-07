@@ -86,9 +86,8 @@ def rss_sub(update, context):
         if exists is not None:
             LOGGER.error("This title already subscribed! Choose another title!")
             return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
-
         try:
-            rss_d = feedparser.parse(feed_link)
+            rss_d = feedparse(feed_link)
             sub_msg = "<b>Subscribed!</b>"
             sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed Url: </b>{feed_link}"
             sub_msg += f"\n\n<b>latest record for </b>{rss_d.feed.title}:"
@@ -101,38 +100,34 @@ def rss_sub(update, context):
             sub_msg += f"\n\n<b>Filters: </b><code>{filters}</code>"
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
-
-            # Add the modified code here to populate rss_dict with the correct data structure
-            rss_dict_lock.acquire()
-            try:
-                rss_dict[title] = {'url': feed_link, 'title': rss_d.feed.title}
-            finally:
-                rss_dict_lock.release()
-
-            db_manager.rss_add(title, feed_link, last_link, last_title, filters)
+            DbManger().rss_add(title, feed_link, last_link, last_title, filters)
+            with rss_dict_lock:
+                if len(rss_dict) == 0:
+                    rss_job.enabled = True
+                rss_dict[title] = [feed_link, last_link, last_title, f_lists]
             sendMessage(sub_msg, context.bot, update.message)
             LOGGER.info(f"Rss Feed Added: {title} - {feed_link} - {filters}")
         except (IndexError, AttributeError) as e:
             LOGGER.error(str(e))
-            msg = "The link doesn't seem to be a valid RSS feed or it's region-blocked!"
+            msg = "The link doesn't seem to be a RSS feed or it's region-blocked!"
             sendMessage(msg, context.bot, update.message)
         except Exception as e:
             LOGGER.error(str(e))
             sendMessage(str(e), context.bot, update.message)
     except IndexError:
-        msg = f"Use this format to add a feed URL:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
-        msg += " f: 1080 or 720 or 144p|mkv or mp4|hevc (optional)\n\nThis filter will parse links that have titles"
-        msg += " containing `(1080 or 720 or 144p) and (mkv or mp4) and hevc` words. You can add whatever you want.\n\n"
-        msg += "Another example: f:  1080  or 720p|.web. or .webrip.|hvec or x264. This will parse titles that have"
-        msg += " (1080 or 720p) and (.web. or .webrip.) and (hevc or x264). I have added space before and after 1080"
-        msg += " to avoid wrong matching. If there's a `10805695` number in the title, it will match 1080 if you added 1080"
-        msg += " without spaces after it."
+        msg = f"Use this format to add feed url:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
+        msg += " f: 1080 or 720 or 144p|mkv or mp4|hevc (optional)\n\nThis filter will parse links that it's titles"
+        msg += " contains `(1080 or 720 or 144p) and (mkv or mp4) and hevc` words. You can add whatever you want.\n\n"
+        msg += "Another example: f:  1080  or 720p|.web. or .webrip.|hvec or x264. This will parse titles that contains"
+        msg += " ( 1080  or 720p) and (.web. or .webrip.) and (hvec or x264). I have added space before and after 1080"
+        msg += " to avoid wrong matching. If this `10805695` number in title it will match 1080 if added 1080 without"
+        msg += " spaces after it."
         msg += "\n\nFilters Notes:\n\n1. | means and.\n\n2. Add `or` between similar keys, you can add it"
-        msg += " between qualities or between extensions, so don't add filters like this f: 1080|mp4 or 720|web"
+        msg += " between qualities or between extensions, so don't add filter like this f: 1080|mp4 or 720|web"
         msg += " because this will parse 1080 and (mp4 or 720) and web ... not (1080 and mp4) or (720 and web)."
         msg += "\n\n3. You can add `or` and `|` as much as you want."
-        msg += "\n\n4. Take a look at the title if it has static special characters after or before the qualities or extensions"
-        msg += " or whatever and use them in filters to avoid wrong matches."
+        msg += "\n\n4. Take look on title if it has static special character after or before the qualities or extensions"
+        msg += " or whatever and use them in filter to avoid wrong match"
         sendMessage(msg, context.bot, update.message)
 
 def rss_unsub(update, context):
@@ -144,7 +139,7 @@ def rss_unsub(update, context):
             LOGGER.error(msg)
             sendMessage(msg, context.bot, update.message)
         else:
-            db_manager.rss_delete(title)
+            DbManger().rss_delete(title)
             with rss_dict_lock:
                 del rss_dict[title]
             sendMessage(f"Rss link with Title: <code>{title}</code> has been removed!", context.bot, update.message)
