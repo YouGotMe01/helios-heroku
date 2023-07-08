@@ -214,81 +214,33 @@ class DbManager:
                 else:
                     cur.execute(query)
 
-    def rss_update(self, name, feed_url, entry_link, entry_title, last_title, new_title=None):
-        try:
-            if new_title is None:
-                query = "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s"
-                parameters = (entry_title, name, feed_url, last_title)
-            else:
-                query = "UPDATE rss_data SET last_title = %s WHERE name = %s AND feed_url = %s AND last_title = %s"
-                parameters = (new_title, name, feed_url, last_title)
-
-            self.execute_query(query, parameters)
-
-            if new_title is not None:
-                query = "INSERT INTO rss_history(name, feed_url, entry_link, entry_title) VALUES (%s, %s, %s, %s)"
-                parameters = (name, feed_url, entry_link, entry_title)
-                self.execute_query(query, parameters)
-
-        except Exception as e:
-            # Handle the exception or log the error
-            print(f"Error updating RSS: {str(e)}")
-
-    def update_feed_title(self, name, feed_title):
-        try:
-            query = "UPDATE rss_data SET feed_title = %s WHERE name = %s"
-            parameters = (feed_title, name)
-
-            self.execute_query(query, parameters)
-
-        except Exception as e:
-            # Handle the exception or log the error
-            print(f"Error updating feed title: {str(e)}")
-
-    def get_last_processed_entry(self, name, feed_url):
-        try:
-            query = "SELECT entry_link FROM rss_history WHERE name = %s AND feed_url = %s ORDER BY id DESC LIMIT 1"
-            parameters = (name, feed_url)
-
-            with self.get_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute(query, parameters)
-                    row = cur.fetchone()
-
-            return row[0] if row else None
-
-        except Exception as e:
-            # Handle the exception or log the error
-            print(f"Error retrieving last processed entry: {str(e)}")
-            return None
-
-    def rss(self, name, feed_url, feed_title=None):
-        try:
-            query = "INSERT INTO rss_data(name, feed_url, last_title, feed_title) VALUES (%s, %s, '', %s) ON CONFLICT DO NOTHING"
-            parameters = (name, feed_url, feed_title)
-
-            self.execute_query(query, parameters)
-
-        except Exception as e:
-            # Handle the exception or log the error
-            print(f"Error inserting RSS data: {str(e)}")
+    def rss_update(self, name, feed_url, entry_link, entry_title, last_title):
+        query = "UPDATE rss_data SET last_processed_entry = %s, last_title = %s WHERE name = %s AND feed_url = %s"
+        parameters = (entry_link, entry_title, name, feed_url)
+        self.execute_query(query, parameters)
 
     def rss_delete(self, name):
-        try:
-            queries = [
-                ("DELETE FROM rss_data WHERE name = %s", (name,)),
-                ("DELETE FROM rss_history WHERE name = %s", (name,))
-            ]
+        query = "DELETE FROM rss_data WHERE name = %s"
+        parameters = (name,)
+        self.execute_query(query, parameters)
 
-            for query, parameters in queries:
-                self.execute_query(query, parameters)
+    def rss(self, name, feed_url, feed_title):
+        query = "INSERT INTO rss_data (name, feed_url, feed_title) VALUES (%s, %s, %s)"
+        parameters = (name, feed_url, feed_title)
+        self.execute_query(query, parameters)
 
-        except Exception as e:
-            # Handle the exception or log the error
-            print(f"Error deleting RSS data: {str(e)}")
+    def get_last_processed_entry(self, name, feed_url):
+        query = "SELECT last_processed_entry FROM rss_data WHERE name = %s AND feed_url = %s"
+        parameters = (name, feed_url)
+        with self.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, parameters)
+                row = cur.fetchone()
+                if row:
+                    return row[0]
+                return None
 
-
-def rss_monitor(context, db_url):
+def rss_monitor(update, context, db_url):
     db_manager = DbManager(db_url)
 
     with rss_dict_lock:
@@ -300,9 +252,10 @@ def rss_monitor(context, db_url):
             for data in data_list:
                 if not isinstance(data, dict) or 'url' not in data or 'title' not in data:
                     LOGGER.warning(f"Invalid data structure for feed: {name}")
-                    continue                
-                feed_url = data['url']  
-                feed_title = data['title']  
+                    continue
+
+                feed_url = data['url']
+                feed_title = data['title']
 
                 if feed_url is None:
                     LOGGER.warning(f"No feed URL available for feed: {name}")
