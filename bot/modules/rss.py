@@ -8,6 +8,7 @@ import feedparser
 import time
 import hashlib
 from bs4 import BeautifulSoup
+from functools import partial
 from time import sleep
 from psycopg2 import DatabaseError
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -334,7 +335,7 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     dispatcher.add_handler(rss_unsub_handler)
     dispatcher.add_handler(rss_settings_handler)
     dispatcher.add_handler(rss_buttons_handler)
-    rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS")
-    rss_job.enabled = True
+    partial_rss_monitor = partial(rss_monitor, context, db_url)
+    rss_job = job_queue.run_repeating(partial_rss_monitor, interval=RSS_DELAY, first=20, name="RSS")
 
 
