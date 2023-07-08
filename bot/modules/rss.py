@@ -81,20 +81,12 @@ def rss_sub(update, context):
 
         title = args[1].strip()
         feed_link = args[2].strip()
-        f_lists = []
+        filters = None
 
         if len(args) == 4:
             filters = args[3].strip().lower()
             if filters.startswith('f: '):
                 filters = filters.split('f: ', 1)[1]
-                filters_list = filters.split('|')
-                for x in filters_list:
-                    y = x.split(' or ')
-                    f_lists.append(y)
-            else:
-                filters = None
-        else:
-            filters = None
 
         try:
             rss_d = feedparse(feed_link)
@@ -104,8 +96,6 @@ def rss_sub(update, context):
             sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
             link = rss_d.entries[0].get('links', [{}])[1].get('href', rss_d.entries[0].get('link'))
             sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
-            if filters is None:
-                filters = None
             sub_msg += f"\n\n<b>Filters: </b><code>{filters}</code>" if filters else ""
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
@@ -117,7 +107,7 @@ def rss_sub(update, context):
             with rss_dict_lock:
                 if not rss_dict:
                     rss_job.enabled = True
-                rss_dict[title] = [feed_link, last_link, last_title, f_lists]
+                rss_dict[title] = [feed_link, last_link, last_title, []]
             sendMessage(sub_msg, context.bot, update.message)
 
             # Log the event after sending the message
