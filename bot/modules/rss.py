@@ -64,6 +64,21 @@ def rss_sub(update, context):
 
     try:
         args = update.message.text.split(maxsplit=3)
+        if len(args) < 3:
+            msg = f"Please provide a feed URL.\n\nUse this format to add a feed URL:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
+            msg += " f: 1080 or 720 or 144p | mkv or mp4 | hevc (optional)\n\n"
+            msg += "This filter will parse links that contain titles with `(1080 or 720 or 144p)` and `(mkv or mp4)` and `hevc` words."
+            msg += " You can add whatever you want. Another example: f: (1080 or 720p) | (.web. or .webrip.) | (hvec or x264)."
+            msg += " This will parse titles that contain `(1080 or 720p)` and `(.web. or .webrip.)` and `(hvec or x264)`."
+            msg += "\n\nFilter Notes:\n\n1. The `|` operator means 'and'.\n\n"
+            msg += "2. Add `or` between similar keys, you can add it between qualities or extensions, so don't add filter like"
+            msg += " this: f: 1080 | mp4 or 720 | web. This will parse '1080' and'(mp4 or 720)' and 'web', not '(1080 and mp4) or (720 and web)'."
+            msg += "\n\n3. You can add `or` and `|` as much as you want.\n\n"
+            msg += "4. Use parentheses to group filters and create more complex conditions. For example: f: (1080p or 720p) | (mp4 and hvec)"
+            msg += " will parse titles that contain either '1080p' or '720p', and 'mp4' and 'hvec'."
+            sendMessage(msg, context.bot, update.message)
+            return
+
         title = args[1].strip()
         feed_link = args[2].strip()
         f_lists = []
@@ -120,12 +135,6 @@ def rss_sub(update, context):
         msg += "This filter will parse links that contain titles with `(1080 or 720 or 144p)` and `(mkv or mp4)` and `hevc` words."
         msg += " You can add whatever you want. Another example: f: (1080 or 720p) | (.web. or .webrip.) | (hvec or x264)."
         msg += " This will parse titles that contain `(1080 or 720p)` and `(.web. or .webrip.)` and `(hvec or x264)`."
-        msg += "\n\nFilter Notes:\n\n1. The `|` operator means 'and'.\n\n"
-        msg += "2. Add `or` between similar keys, you can add it between qualities or extensions, so don't add filter like"
-        msg += " this: f: 1080 | mp4 or 720 | web. This will parse '1080' and'(mp4 or 720)' and 'web', not '(1080 and mp4) or (720 and web)'."
-        msg += "\n\n3. You can add `or` and `|` as much as you want.\n\n"
-        msg += "4. Use parentheses to group filters and create more complex conditions. For example: f: (1080p or 720p) | (mp4 and hvec)"
-        msg += " will parse titles that contain either '1080p' or '720p', and 'mp4' and 'hvec'."
         sendMessage(msg, context.bot, update.message)
 
 def rss_unsub(update, context):
