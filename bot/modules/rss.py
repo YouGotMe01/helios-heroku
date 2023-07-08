@@ -321,6 +321,9 @@ def rss_monitor(update, context, db_url):
         except Exception as e:
             LOGGER.error(f"Error monitoring feed: {name} - Error: {str(e)}")
             
+def run_rss_monitor():
+    rss_monitor(context, db_url)
+
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
@@ -336,8 +339,7 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     dispatcher.add_handler(rss_settings_handler)
     dispatcher.add_handler(rss_buttons_handler)
     partial_rss_monitor = lambda: rss_monitor(context, db_url)
-    rss_job = job_queue.run_repeating(partial_rss_monitor, interval=RSS_DELAY, first=20, name="RSS")
-            
+    rss_job = job_queue.run_repeating(run_rss_monitor, interval=RSS_DELAY, first=20, name="RSS")        
             
 
 
