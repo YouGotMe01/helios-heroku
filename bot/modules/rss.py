@@ -74,6 +74,13 @@ def rss_sub(update, context):
         if exists is not None:
             LOGGER.error("This title already subscribed! Choose another title!")
             return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
+
+        # Check if the feed URL already exists in rss_dict
+        for existing_title, existing_data in rss_dict.items():
+            if existing_data[0] == feed_link:
+                LOGGER.error("This feed URL already exists! Choose another URL!")
+                return sendMessage("This feed URL already exists! Choose another URL!", context.bot, update.message)
+
         try:
             rss_d = feedparse(feed_link)
             sub_msg = "<b>Subscribed!</b>"
@@ -97,7 +104,7 @@ def rss_sub(update, context):
             LOGGER.info(f"Rss Feed Added: {title} - {feed_link} - {filters}")
         except (IndexError, AttributeError) as e:
             LOGGER.error(str(e))
-            msg = "The link doesn't seem to be a RSS feed or it's region-blocked!"
+            msg = "The link doesn't seem to be an RSS feed or it's region-blocked!"
             sendMessage(msg, context.bot, update.message)
         except Exception as e:
             LOGGER.error(str(e))
