@@ -51,81 +51,47 @@ def rss_get(update, context):
         sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
 
 def rss_sub(update, context):
-    """
-    Add a new RSS feed subscription.
-
-    Args:
-        update (telegram.Update): The update object.
-        context (telegram.ext.CallbackContext): The context object.
-
-    Returns:
-        None
-    """
-
     try:
-        args = update.message.text.split(maxsplit=3)
-        if len(args) < 3:
-            msg = f"Please provide a feed URL.\n\nUse this format to add a feed URL:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
-            msg += " f: 1080 or 720 or 144p | mkv or mp4 | hevc (optional)\n\n"
-            msg += "This filter will parse links that contain titles with `(1080 or 720 or 144p)` and `(mkv or mp4)` and `hevc` words."
-            msg += " You can add whatever you want. Another example: f: (1080 or 720p) | (.web. or .webrip.) | (hvec or x264)."
-            msg += " This will parse titles that contain `(1080 or 720p)` and `(.web. or .webrip.)` and `(hvec or x264)`."
-            msg += "\n\nFilter Notes:\n\n1. The `|` operator means 'and'.\n\n"
-            msg += "2. Add `or` between similar keys, you can add it between qualities or extensions, so don't add filter like"
-            msg += " this: f: 1080 | mp4 or 720 | web. This will parse '1080' and'(mp4 or 720)' and 'web', not '(1080 and mp4) or (720 and web)'."
-            msg += "\n\n3. You can add `or` and `|` as much as you want.\n\n"
-            msg += "4. Use parentheses to group filters and create more complex conditions. For example: f: (1080p or 720p) | (mp4 and hvec)"
-            msg += " will parse titles that contain either '1080p' or '720p', and 'mp4' and 'hvec'."
-            sendMessage(msg, context.bot, update.message)
+        args = update.message.text.split(maxsplit=1)
+        feed_link = args[1].strip()
+
+        exists = rss_dict.get(feed_link)
+        if exists is not None:
+            LOGGER.error("This feed URL is already subscribed! Choose another URL!")
+            update.message.reply_text("This feed URL is already subscribed! Choose another URL!")
             return
-
-        title = args[1].strip()
-        feed_link = args[2].strip()
-        filters = None
-
-        if len(args) == 4:
-            filters = args[3].strip().lower()
-            if filters.startswith('f: '):
-                filters = filters.split('f: ', 1)[1]
 
         try:
             rss_d = feedparse(feed_link)
             sub_msg = "<b>Subscribed!</b>"
-            sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed Url: </b>{feed_link}"
-            sub_msg += f"\n\n<b>Latest record for </b>{rss_d.feed.title}:"
+            sub_msg += f"\n\n<b>Title: </b><code>{rss_d.feed.title}</code>\n<b>Feed Url: </b>{feed_link}"
+            sub_msg += f"\n\n<b>latest record for </b>{rss_d.feed.title}:"
             sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
-            link = rss_d.entries[0].get('links', [{}])[1].get('href', rss_d.entries[0].get('link'))
+            try:
+                link = rss_d.entries[0]['links'][1]['href']
+            except IndexError:
+                link = rss_d.entries[0]['link']
             sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
-            sub_msg += f"\n\n<b>Filters: </b><code>{filters}</code>" if filters else ""
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
-
-            # Add the subscription to the database
-            # (this stores the title, feed link, last link, last title, and filters, if any)
-            DbManager().rss_add(title, feed_link, last_link, last_title, filters)
-
+            DbManger().rss_add(rss_d.feed.title, feed_link, last_link, last_title)
             with rss_dict_lock:
-                if not rss_dict:
+                if len(rss_dict) == 0:
                     rss_job.enabled = True
-                rss_dict[title] = [feed_link, last_link, last_title, []]
-            sendMessage(sub_msg, context.bot, update.message)
-
-            # Log the event after sending the message
-            LOGGER.info(f"Rss Feed Added: {title} - {feed_link} - {filters}")
+                rss_dict[rss_d.feed.title] = [feed_link, last_link, last_title, None]
+            update.message.reply_text(sub_msg, parse_mode='HTML')
+            LOGGER.info(f"Rss Feed Added: {rss_d.feed.title} - {feed_link}")
         except (IndexError, AttributeError) as e:
             LOGGER.error(str(e))
             msg = "The link doesn't seem to be an RSS feed or it's region-blocked!"
-            sendMessage(msg, context.bot, update.message)
+            update.message.reply_text(msg)
         except Exception as e:
             LOGGER.error(str(e))
-            sendMessage(str(e), context.bot, update.message)
+            update.message.reply_text(str(e))
     except IndexError:
-        msg = f"Use this format to add a feed URL:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
-        msg += " f: 1080 or 720 or 144p | mkv or mp4 | hevc (optional)\n\n"
-        msg += "This filter will parse links that contain titles with `(1080 or 720 or 144p)` and `(mkv or mp4)` and `hevc` words."
-        msg += " You can add whatever you want. Another example: f: (1080 or 720p) | (.web. or .webrip.) | (hvec or x264)."
-        msg += " This will parse titles that contain `(1080 or 720p)` and `(.web. or .webrip.)` and `(hvec or x264)`."
-        sendMessage(msg, context.bot, update.message)
+        msg = f"Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com"
+        update.message.reply_text(msg)
+
 
 def rss_unsub(update, context):
     try:
