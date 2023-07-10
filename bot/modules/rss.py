@@ -1,3 +1,6 @@
+import re
+import cloudscraper 
+from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -195,11 +198,17 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND is not None:
+                    hijk = url
+                    scraper = cloudscraper.create_scraper(allow_brotli=False)
+                    lmno=scraper.get(hijk).text 
+                    soup4=BeautifulSoup(lmno,'html.parser')
+                    for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
+                        url=pqrs.get('href')                 
                     feed_msg = f"{RSS_COMMAND} {url}"
+                    sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"
-                sendRss(feed_msg, context.bot)
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"                
                 feed_count += 1
                 sleep(5)
             DbManager().rss_update(name, str(last_link), str(last_title))
