@@ -77,7 +77,7 @@ def rss_sub(update, context):
             sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
-            DbManger().rss_add(rss_d.feed.title, feed_link, last_link, last_title)
+            DbManager().rss_add(rss_d.feed.title, feed_link, last_link, last_title)
             with rss_dict_lock:
                 if len(rss_dict) == 0:
                     rss_job.enabled = True
@@ -94,7 +94,6 @@ def rss_sub(update, context):
     except IndexError:
         msg = f"Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com"
         update.message.reply_text(msg)
-
 
 def rss_unsub(update, context):
     try:
