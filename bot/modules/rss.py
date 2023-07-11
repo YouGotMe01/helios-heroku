@@ -206,8 +206,12 @@ def rss_monitor(context):
                     feed_msg = f"{RSS_COMMAND} {url}"
                     sendRss(feed_msg, context.bot)
                 else:
+                    # Add your logic here based on the new RSS entry
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"                
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"
+                    # Perform your custom logic here
+                    # You can send a message, store data, or trigger other functions based on the new RSS entry
+                    # ...
                 feed_count += 1
                 sleep(5)
             DbManager().rss_update(name, str(last_link), str(last_title))
