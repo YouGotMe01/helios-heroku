@@ -25,6 +25,7 @@ python-telegram-bot==13.15
 qbittorrent-api
 requests
 SecretStorage
+torrentool==2.3.2
 telegraph
 tenacity
 tgCrypto
