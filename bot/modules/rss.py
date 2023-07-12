@@ -164,20 +164,7 @@ def rss_set_update(update, context):
         except:
             pass
             
-file_path = "/home/user/data.txt"
-torrent_path = "/home/user/torrents/my_torrent.torrent"            
-def generate_torrent_file(file_path, torrent_path):
-    print("Generating torrent file...")
-    print(f"File path: {file_path}")
-    print(f"Torrent path: {torrent_path}")
-    try:
-        creator = py3createtorrent.create_torrent(file_path)
-        creator.save(torrent_path)
-        print("Torrent file saved successfully.")
-    except Exception as e:
-        print(f"Error generating torrent file: {e}")
-
-def rss_monitor(context, file_path, torrent_path):
+def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
             rss_job.enabled = False
@@ -200,8 +187,8 @@ def rss_monitor(context, file_path, torrent_path):
                           Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 parse = True
-                for item in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in item):
+                for list in data[3]:
+                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
                         parse = False
                         feed_count += 1
                         break
@@ -217,14 +204,15 @@ def rss_monitor(context, file_path, torrent_path):
                     lmno=scraper.get(hijk).text 
                     soup4=BeautifulSoup(lmno,'html.parser')
                     for pqrs in soup4.find_all('a',attrs={'href':re.compile(r"^magnet")}): 
-                        url=pqrs.get('href')                 
+                        url=pqrs.get('href')
                     feed_msg = f"{RSS_COMMAND} {url}"
                     sendRss(feed_msg, context.bot)
                 else:
-                    generate_torrent_file(file_path, torrent_path)
+                    feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
+                    feed_msg += f"<b>Link: </b><code>{url}</code>"                
                 feed_count += 1
-                time.sleep(5)
-            DbManager().rss_update(name, str(last_link), str(last_title))
+                sleep(5)
+            DbManger().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
@@ -232,33 +220,22 @@ def rss_monitor(context, file_path, torrent_path):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-            
-if DB_URI is not None and RSS_CHAT_ID is not None:
-    # define the arguments to be passed to rss_monitor
-    rss_monitor_args = (file_path, torrent_path)
 
-    # create handlers for your commands and callback query
+if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_sub_handler = CommandHandler(BotCommands.RssSubCommand, rss_sub, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_unsub_handler = CommandHandler(BotCommands.RssUnSubCommand, rss_unsub, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_settings_handler = CommandHandler(BotCommands.RssSettingsCommand, rss_settings, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-    rss_buttons_handler = CallbackQueryHandler(rss_set_update, pattern="rss", pass_job_queue=True, pass_chat_data=True, pass_user_data=True)
+    rss_buttons_handler = CallbackQueryHandler(rss_set_update, pattern="rss", run_async=True)
 
-    # add the handlers to the dispatcher
-    dispatcher = updater.dispatcher
     dispatcher.add_handler(rss_list_handler)
     dispatcher.add_handler(rss_get_handler)
     dispatcher.add_handler(rss_sub_handler)
     dispatcher.add_handler(rss_unsub_handler)
     dispatcher.add_handler(rss_settings_handler)
     dispatcher.add_handler(rss_buttons_handler)
+    rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS")
+    rss_job.enabled = True                       
 
-    # get the job queue from the updater instance and add your repeating job
-    job_queue = updater.job_queue
-    rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS", context=rss_monitor_args)
-    rss_job.enabled = True
-else:
-    # handle the case where DB_URI or RSS_CHAT_ID is None
-    pass
-
+    
