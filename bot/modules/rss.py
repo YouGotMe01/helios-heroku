@@ -61,7 +61,7 @@ def rss_sub(update, context):
         exists = rss_dict.get(feed_link)
         if exists is not None:
             LOGGER.error("This feed URL is already subscribed! Choose another URL!")
-            update.message.reply_text("This feed URL is already subscribed! Choose another URL!")
+            sendMessage("This feed URL is already subscribed! Choose another URL!", context.bot, update.message)
             return
 
         try:
@@ -77,23 +77,23 @@ def rss_sub(update, context):
             sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
-            DbManager().rss_add(rss_d.feed.title, feed_link, last_link, last_title)
+            DbManger().rss_add(rss_d.feed.title, feed_link, last_link, last_title)
             with rss_dict_lock:
                 if len(rss_dict) == 0:
                     rss_job.enabled = True
                 rss_dict[rss_d.feed.title] = [feed_link, last_link, last_title, None]
-            update.message.reply_text(sub_msg, parse_mode='HTML')
+            sendMessage(sub_msg, context.bot, update.message)
             LOGGER.info(f"Rss Feed Added: {rss_d.feed.title} - {feed_link}")
         except (IndexError, AttributeError) as e:
             LOGGER.error(str(e))
             msg = "The link doesn't seem to be an RSS feed or it's region-blocked!"
-            update.message.reply_text(msg)
+            sendMessage(msg, context.bot, update.message)
         except Exception as e:
             LOGGER.error(str(e))
-            update.message.reply_text(str(e))
+            sendMessage(str(e), context.bot, update.message)
     except IndexError:
         msg = f"Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com"
-        update.message.reply_text(msg)
+        sendMessage(msg, context.bot, update.message)
 
 def rss_unsub(update, context):
     try:
