@@ -163,12 +163,19 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-
+            
 def generate_torrent_file(file_path, torrent_path):
-    creator = py3createtorrent.create_torrent(file_path)
-    creator.save(torrent_path)
+    print("Generating torrent file...")
+    print(f"File path: {file_path}")
+    print(f"Torrent path: {torrent_path}")
+    try:
+        creator = py3createtorrent.create_torrent(file_path)
+        creator.save(torrent_path)
+        print("Torrent file saved successfully.")
+    except Exception as e:
+        print(f"Error generating torrent file: {e}")
 
-def rss_monitor(context):
+def rss_monitor(context, file_path, torrent_path):
     with rss_dict_lock:
         if len(rss_dict) == 0:
             rss_job.enabled = False
@@ -212,11 +219,9 @@ def rss_monitor(context):
                     feed_msg = f"{RSS_COMMAND} {url}"
                     sendRss(feed_msg, context.bot)
                 else:
-                    file_path = '/path/to/your/file'  # Replace with the actual path to the file you want to create a torrent for
-                    torrent_path = '/path/to/save/torrent/file.torrent'  # Replace with the path where you want to save the torrent file
                     generate_torrent_file(file_path, torrent_path)
                 feed_count += 1
-                sleep(5)
+                time.sleep(5)
             DbManager().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
