@@ -230,8 +230,12 @@ def rss_monitor(context, file_path, torrent_path):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-
+            
 if DB_URI is not None and RSS_CHAT_ID is not None:
+    # define the arguments to be passed to rss_monitor
+    rss_monitor_args = (file_path, torrent_path)
+
+    # create handlers for your commands and callback query
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_sub_handler = CommandHandler(BotCommands.RssSubCommand, rss_sub, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
@@ -239,13 +243,20 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_settings_handler = CommandHandler(BotCommands.RssSettingsCommand, rss_settings, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_buttons_handler = CallbackQueryHandler(rss_set_update, pattern="rss", pass_job_queue=True, pass_chat_data=True, pass_user_data=True)
 
+    # add the handlers to the dispatcher
+    dispatcher = updater.dispatcher
     dispatcher.add_handler(rss_list_handler)
     dispatcher.add_handler(rss_get_handler)
     dispatcher.add_handler(rss_sub_handler)
     dispatcher.add_handler(rss_unsub_handler)
     dispatcher.add_handler(rss_settings_handler)
     dispatcher.add_handler(rss_buttons_handler)
-   
+
+    # get the job queue from the updater instance and add your repeating job
+    job_queue = updater.job_queue
     rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS", context=rss_monitor_args)
     rss_job.enabled = True
+else:
+    # handle the case where DB_URI or RSS_CHAT_ID is None
+    pass
 
