@@ -165,7 +165,7 @@ def rss_set_update(update, context):
             pass
             
 file_path = "/home/user/data.txt"
-torrent_path = "/home/user/torrents/my_torrent"            
+torrent_path = "/home/user/torrents/my_torrent.torrent"            
 def generate_torrent_file(file_path, torrent_path):
     print("Generating torrent file...")
     print(f"File path: {file_path}")
