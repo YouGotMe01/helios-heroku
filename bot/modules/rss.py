@@ -14,6 +14,9 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper import button_build
 
+file_path = "/home/user/data.txt"
+torrent_path = "/home/user/torrents/my_torrent"
+
 rss_dict_lock = Lock()
 
 def rss_list(update, context):
