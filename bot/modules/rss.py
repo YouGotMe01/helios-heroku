@@ -245,7 +245,7 @@ if DB_URI is not None and RSS_CHAT_ID is not None:
     dispatcher.add_handler(rss_unsub_handler)
     dispatcher.add_handler(rss_settings_handler)
     dispatcher.add_handler(rss_buttons_handler)
-    rss_monitor_args = (file_path, torrent_path)
+   
     rss_job = job_queue.run_repeating(rss_monitor, interval=RSS_DELAY, first=20, name="RSS", context=rss_monitor_args)
     rss_job.enabled = True
 
