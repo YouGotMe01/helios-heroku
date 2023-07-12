@@ -95,6 +95,7 @@ def rss_sub(update, context):
     except IndexError:
         msg = f"Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com"
         sendMessage(msg, context.bot, update.message)
+   
 
 def rss_unsub(update, context):
     try:
