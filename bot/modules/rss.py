@@ -1,5 +1,6 @@
 import re
 import cloudscraper 
+import py3createtorrent
 from bs4 import BeautifulSoup
 from torrentool import Torrent 
 from feedparser import parse as feedparse
@@ -163,6 +164,10 @@ def rss_set_update(update, context):
         except:
             pass
 
+def generate_torrent_file(file_path, torrent_path):
+    creator = py3createtorrent.create_torrent(file_path)
+    creator.save(torrent_path)
+
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -186,8 +191,8 @@ def rss_monitor(context):
                           Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 parse = True
-                for list in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
+                for item in data[3]:
+                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in item):
                         parse = False
                         feed_count += 1
                         break
@@ -207,16 +212,9 @@ def rss_monitor(context):
                     feed_msg = f"{RSS_COMMAND} {url}"
                     sendRss(feed_msg, context.bot)
                 else:
-                    # Generate the torrent file
-                    torrent = Torrent(path_to_file)  # Replace `path_to_file` with the actual path to the file you want to create a torrent for
-                    torrent.generate()
+                    file_path = '/path/to/your/file'  # Replace with the actual path to the file you want to create a torrent for
                     torrent_path = '/path/to/save/torrent/file.torrent'  # Replace with the path where you want to save the torrent file
-                    torrent.save(torrent_path)
-
-                    # Perform your custom logic here
-                    # You can send a message, store data, or trigger other functions based on the new RSS entry
-                    # ...
-
+                    generate_torrent_file(file_path, torrent_path)
                 feed_count += 1
                 sleep(5)
             DbManager().rss_update(name, str(last_link), str(last_title))
@@ -227,7 +225,6 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
