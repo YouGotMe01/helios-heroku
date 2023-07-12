@@ -2,7 +2,6 @@ import re
 import cloudscraper 
 import py3createtorrent
 from bs4 import BeautifulSoup
-from torrentool import Torrent 
 from feedparser import parse as feedparse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
