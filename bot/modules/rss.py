@@ -1,6 +1,7 @@
 import re
 import cloudscraper 
 from bs4 import BeautifulSoup
+from torrentool import Torrent 
 from feedparser import parse as feedparse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -206,12 +207,16 @@ def rss_monitor(context):
                     feed_msg = f"{RSS_COMMAND} {url}"
                     sendRss(feed_msg, context.bot)
                 else:
-                    # Add your logic here based on the new RSS entry
-                    feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                    feed_msg += f"<b>Link: </b><code>{url}</code>"
+                    # Generate the torrent file
+                    torrent = Torrent(path_to_file)  # Replace `path_to_file` with the actual path to the file you want to create a torrent for
+                    torrent.generate()
+                    torrent_path = '/path/to/save/torrent/file.torrent'  # Replace with the path where you want to save the torrent file
+                    torrent.save(torrent_path)
+
                     # Perform your custom logic here
                     # You can send a message, store data, or trigger other functions based on the new RSS entry
                     # ...
+
                 feed_count += 1
                 sleep(5)
             DbManager().rss_update(name, str(last_link), str(last_title))
@@ -222,6 +227,7 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
