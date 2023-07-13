@@ -77,7 +77,7 @@ def rss_sub(update, context):
             sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
             last_link = str(rss_d.entries[0]['link'])
             last_title = str(rss_d.entries[0]['title'])
-            DbManger().rss_add(title, feed_link, last_link, last_title, filters=None)  # Pass None for filters
+            DbManager().rss_add(title, feed_link, last_link, last_title, filters=None)  # Pass None for filters
             with rss_dict_lock:
                 if len(rss_dict) == 0:
                     rss_job.enabled = True
@@ -210,7 +210,7 @@ def rss_monitor(context):
                     feed_msg += f"<b>Link: </b><code>{url}</code>"                
                 feed_count += 1
                 sleep(5)
-            DbManger().rss_update(name, str(last_link), str(last_title))
+            DbManager().rss_update(name, str(last_link), str(last_title))
             with rss_dict_lock:
                 rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
