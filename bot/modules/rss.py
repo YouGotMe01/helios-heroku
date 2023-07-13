@@ -56,46 +56,70 @@ def rss_get(update, context):
 
 def rss_sub(update, context):
     try:
-        args = update.message.text.split(maxsplit=1)
-        feed_link = args[1].strip()
+        args = update.message.text.split(maxsplit=3)
+        title = args[1].strip()
+        new_feed_link = args[2].strip()
 
-        exists = rss_dict.get(feed_link)
+        exists = rss_dict.get(title)
         if exists is not None:
-            LOGGER.error("This feed URL is already subscribed! Choose another URL!")
-            sendMessage("This feed URL is already subscribed! Choose another URL!", context.bot, update.message)
-            return
+            LOGGER.error("This title is already subscribed! Choose another title.")
+            return sendMessage("This title is already subscribed! Choose another title.", context.bot, update.message)
 
         try:
-            rss_d = feedparse(feed_link)
-            sub_msg = "<b>Subscribed!</b>"
-            sub_msg += f"\n\n<b>Title: </b><code>{rss_d.feed.title}</code>\n<b>Feed Url: </b>{feed_link}"
-            sub_msg += f"\n\n<b>latest record for </b>{rss_d.feed.title}:"
-            sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
-            try:
-                link = rss_d.entries[0]['links'][1]['href']
-            except IndexError:
-                link = rss_d.entries[0]['link']
-            sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
-            last_link = str(rss_d.entries[0]['link'])
-            last_title = str(rss_d.entries[0]['title'])
-            DbManger().rss_add(rss_d.feed.title, feed_link, last_link, last_title)
-            with rss_dict_lock:
-                if len(rss_dict) == 0:
-                    rss_job.enabled = True
-                rss_dict[rss_d.feed.title] = [feed_link, last_link, last_title, None]
-            sendMessage(sub_msg, context.bot, update.message)
-            LOGGER.info(f"Rss Feed Added: {rss_d.feed.title} - {feed_link}")
+            sub_msg = "<b>New Feed Subscribed!</b>"
+            sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed URL: </b>{new_feed_link}"
+
+            rss_d = feedparse(new_feed_link)
+            sub_msg += f"\n\n<b>Latest record for </b>{rss_d.feed.title}:"
+            if rss_d.entries:
+                entry = rss_d.entries[0]
+                entry_title = entry.get('title', '').replace('>', '').replace('<', '')
+                entry_link = entry.get('links', [{'href': entry.get('link')}])[0]['href']
+                sub_msg += f"\n\n<b>Name: </b><code>{entry_title}</code>"
+                sub_msg += f"\n\n<b>Link: </b><code>{entry_link}</code>"
+            else:
+                sub_msg += "\n\n<b>No entries found.</b>"
+
+            last_link = new_feed_link
+            last_title = ""
+
+            if exists is None:
+                DbManager().rss_add(title, new_feed_link, last_link, last_title)  # Add a new subscription
+                with rss_dict_lock:
+                    if len(rss_dict) == 0:
+                        rss_job.enabled = True
+                    rss_dict[title] = [new_feed_link, last_link, last_title]
+                sendMessage(sub_msg, context.bot, update.message)
+                LOGGER.info(f"New Rss Feed Subscribed: {title} - {new_feed_link}")
+            else:
+                DbManager().rss_modify(title, new_feed_link, last_link, last_title)  # Update the feed URL in the database
+                with rss_dict_lock:
+                    rss_dict[title][0] = new_feed_link  # Update the feed URL in the in-memory dictionary
+                sendMessage(sub_msg, context.bot, update.message)
+                LOGGER.info(f"Rss Feed URL Modified: {title} - {new_feed_link}")
         except (IndexError, AttributeError) as e:
             LOGGER.error(str(e))
-            msg = "The link doesn't seem to be an RSS feed or it's region-blocked!"
+            msg = "The feed URL doesn't seem to be a valid RSS feed or it's region-blocked!"
             sendMessage(msg, context.bot, update.message)
         except Exception as e:
             LOGGER.error(str(e))
             sendMessage(str(e), context.bot, update.message)
     except IndexError:
-        msg = f"Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com"
+        msg = f"Use this format to add a feed URL:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
+        msg += " f: 1080 or 720 or 144p|mkv or mp4|hevc (optional)\n\nThis filter will parse links whose titles"
+        msg += " contain `(1080 or 720 or 144p) and (mkv or mp4) and hevc` words. You can add whatever you want.\n\n"
+        msg += "Another example: f:  1080  or 720p|.web. or .webrip.|hvec or x264. This will parse titles that contain"
+        msg += " (1080 or 720p) and (.web. or .webrip.) and (hvec or x264). I have added a space before and after 1080"
+        msg += " to avoid wrong matching. If the title contains the number `10805695`, it will match 1080 if you add 1080 without"
+        msg += " spaces after it."
+        msg += "\n\nFilters Notes:\n\n1. | means 'and'.\n\n2. Add `or` between similar keys. For example, you can add it"
+        msg += " between qualities or between extensions. So, don't add a filter like this: f: 1080|mp4 or 720|web"
+        msg += " because this will parse 1080 and (mp4 or 720) and web, not (1080 and mp4) or (720 and web)."
+        msg += "\n\n3. You can use `or` and `|` as much as you want."
+        msg += "\n\n4. Take a look at the title and check if it has static special characters before or after the qualities or extensions."
+        msg += " Use them in the filter to avoid wrong matches."
         sendMessage(msg, context.bot, update.message)
-   
+
 
 def rss_unsub(update, context):
     try:
