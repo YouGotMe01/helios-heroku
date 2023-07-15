@@ -56,61 +56,41 @@ def rss_get(update, context):
 
 def rss_sub(update, context):
     try:
-        args = update.message.text.split(maxsplit=3)
-        title = args[1].strip()
-        feed_link = args[2].strip()
+        args = update.message.text.split(maxsplit=1)
+        feed_link = args[1].strip()
 
-        exists = rss_dict.get(title)
+        exists = rss_dict.get(feed_link)
         if exists is not None:
-            LOGGER.error("This title is already subscribed! Choose another title!")
-            return sendMessage("This title is already subscribed! Choose another title!", context.bot, update.message)
+            error_msg = "This feed link is already subscribed! Choose another feed link!"
+            LOGGER.error(error_msg)
+            return sendMessage(error_msg, context.bot, update.message)
 
+        # Rest of the code for subscribing to the feed
+        rss_d = feedparse(feed_link)
+        sub_msg = "<b>Subscribed!</b>"
+        sub_msg += f"\n\n<b>Feed Url: </b>{feed_link}"
+        sub_msg += f"\n\n<b>Latest record for </b>{rss_d.feed.title}:"
+        sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').('<', '')}</code>"
         try:
-            rss_d = feedparse(feed_link)
-            sub_msg = "<b>Subscribed!</b>"
-            sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed Url: </b>{feed_link}"
-            sub_msg += f"\n\n<b>Latest record for </b>{rss_d.feed.title}:"
+            link = rss_d.entries[0]['links'][1]['href']
+        except IndexError:
+            link = rss_d.entries[0]['link']
+        sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
+        last_link = str(rss_d.entries[0]['link'])
+        last_title = str(rss_d.entries[0]['title'])
 
-            for entry in rss_d.entries:
-                entry_title = entry['title'].replace('>', '').replace('<', '')
-                try:
-                    link = entry['links'][1]['href']
-                except IndexError:
-                    link = entry['link']
-                sub_msg += f"\n\n<b>Name: </b><code>{entry_title}</code>"
-                sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
+        DbManager().rss_add(feed_link, last_link, last_title, None)
+        with rss_dict_lock:
+            if len(rss_dict) == 0:
+                rss_job.enabled = True
+            rss_dict[feed_link] = [last_link, last_title]
+        sendMessage(sub_msg, context.bot, update.message)
+        LOGGER.info(f"Rss Feed Added: {feed_link}")
 
-                # Process the new torrent entry here
-                process_new_torrent(title, entry_title, link)
-
-            last_link = str(rss_d.entries[0]['link'])
-            last_title = str(rss_d.entries[0]['title'])
-            DbManager().rss_add(title, feed_link, last_link, last_title, filters=None)  # Pass None for filters
-            with rss_dict_lock:
-                if len(rss_dict) == 0:
-                    rss_job.enabled = True
-                rss_dict[title] = [feed_link, last_link, last_title, []]  # Pass empty list for filters
-
-            sendMessage(sub_msg, context.bot, update.message)
-            LOGGER.info(f"Rss Feed Added: {title} - {feed_link}")
-        except (IndexError, AttributeError) as e:
-            LOGGER.error(str(e))
-            msg = "The link doesn't seem to be an RSS feed or it's region-blocked!"
-            sendMessage(msg, context.bot, update.message)
-        except Exception as e:
-            LOGGER.error(str(e))
-            sendMessage(str(e), context.bot, update.message)
     except IndexError:
-        msg = f"Use this format to add a feed URL:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
+        # Error handling for incorrect command usage
+        msg = "Use this format to add feed url:\n/{BotCommands.RssSubCommand} https://www.rss-url.com"
         sendMessage(msg, context.bot, update.message)
-
-
-def process_new_torrent(title, entry_title, link):
-    # Add your code here to process the new torrent entry
-    # You can perform any required actions, such as downloading the torrent or storing its information in a database
-    # For example, you can print the details of the new torrent:
-    print(f"New Torrent: Title={title}, Entry Title={entry_title}, Link={link}")
-
 
 def rss_unsub(update, context):
     try:
