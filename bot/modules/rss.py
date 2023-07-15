@@ -70,7 +70,7 @@ def rss_sub(update, context):
         sub_msg = "<b>Subscribed!</b>"
         sub_msg += f"\n\n<b>Feed Url: </b>{feed_link}"
         sub_msg += f"\n\n<b>Latest record for </b>{rss_d.feed.title}:"
-        sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').('<', '')}</code>"
+        sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
         try:
             link = rss_d.entries[0]['links'][1]['href']
         except IndexError:
