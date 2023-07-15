@@ -1,5 +1,6 @@
 import re
 import cloudscraper 
+import hashlib
 import py3createtorrent
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
@@ -54,14 +55,20 @@ def rss_get(update, context):
     except (IndexError, ValueError):
         sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
 
+
 def rss_sub(update, context):
     try:
-        args = update.message.text.split(maxsplit=1)
+        args = update.message.text.split(maxsplit=2)
         feed_link = args[1].strip()
+        new_torrent_hash = args[2].strip()
 
-        exists = rss_dict.get(feed_link)
-        if exists is not None:
-            error_msg = "This feed link is already subscribed! Choose another feed link!"
+        # Calculate the hash of the new torrent hash using SHA-256 algorithm
+        new_hash_object = hashlib.sha256(new_torrent_hash.encode())
+        new_hash = new_hash_object.hexdigest()
+
+        exists = new_hash in rss_dict
+        if exists:
+            error_msg = "This torrent hash is already subscribed! Choose another torrent hash!"
             LOGGER.error(error_msg)
             return sendMessage(error_msg, context.bot, update.message)
 
@@ -79,18 +86,22 @@ def rss_sub(update, context):
         last_link = str(rss_d.entries[0]['link'])
         last_title = str(rss_d.entries[0]['title'])
 
-        DbManager().rss_add(feed_link, last_link, last_title, None)
+        # Update the new_hash only in the rss_dict
         with rss_dict_lock:
             if len(rss_dict) == 0:
                 rss_job.enabled = True
-            rss_dict[feed_link] = [last_link, last_title]
+            rss_dict[new_hash] = rss_dict.pop(new_torrent_hash)
+
+        DbManager().rss_add(feed_link, last_link, last_title, None)
+
         sendMessage(sub_msg, context.bot, update.message)
-        LOGGER.info(f"Rss Feed Added: {feed_link}")
+        LOGGER.info(f"RSS Feed Added: {feed_link}")
 
     except IndexError:
         # Error handling for incorrect command usage
-        msg = "Use this format to add feed url:\n/{BotCommands.RssSubCommand} https://www.rss-url.com"
+        msg = "Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com new_torrent_hash"
         sendMessage(msg, context.bot, update.message)
+        
 
 def rss_unsub(update, context):
     try:
