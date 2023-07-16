@@ -55,12 +55,10 @@ def rss_get(update, context):
     except (IndexError, ValueError):
         sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
 
-
 def rss_sub(update, context):
     try:
-        args = update.message.text.split(maxsplit=2)
-        feed_link = args[1].strip()
-        new_torrent_hash = args[2].strip()
+        args = update.message.text.split(maxsplit=1)
+        feed_link, new_torrent_hash = args[1].strip().split(maxsplit=1)
 
         # Calculate the hash of the new torrent hash using SHA-256 algorithm
         new_hash_object = hashlib.sha256(new_torrent_hash.encode())
@@ -90,7 +88,7 @@ def rss_sub(update, context):
         with rss_dict_lock:
             if len(rss_dict) == 0:
                 rss_job.enabled = True
-            rss_dict[new_hash] = rss_dict.pop(new_torrent_hash)
+            rss_dict[new_hash] = [last_link, last_title]
 
         DbManager().rss_add(feed_link, last_link, last_title, None)
 
@@ -101,7 +99,6 @@ def rss_sub(update, context):
         # Error handling for incorrect command usage
         msg = "Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com new_torrent_hash"
         sendMessage(msg, context.bot, update.message)
-        
 
 def rss_unsub(update, context):
     try:
