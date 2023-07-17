@@ -58,46 +58,30 @@ def rss_get(update, context):
 def rss_sub(update, context):
     try:
         args = update.message.text.split(maxsplit=1)
-        feed_link, new_torrent_hash = args[1].strip().split(maxsplit=1)
-
-        # Calculate the hash of the new torrent hash using SHA-256 algorithm
-        new_hash_object = hashlib.sha256(new_torrent_hash.encode())
-        new_hash = new_hash_object.hexdigest()
-
-        exists = new_hash in rss_dict
-        if exists:
-            error_msg = "This torrent hash is already subscribed! Choose another torrent hash!"
-            LOGGER.error(error_msg)
-            return sendMessage(error_msg, context.bot, update.message)
-
-        # Rest of the code for subscribing to the feed
+        feed_link, new_title = args[1].strip().split(maxsplit=1)
         rss_d = feedparse(feed_link)
         sub_msg = "<b>Subscribed!</b>"
         sub_msg += f"\n\n<b>Feed Url: </b>{feed_link}"
-        sub_msg += f"\n\n<b>Latest record for </b>{rss_d.feed.title}:"
-        sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
+        sub_msg += f"\n\n<b>Latest record for </b>{new_title}:"
         try:
             link = rss_d.entries[0]['links'][1]['href']
         except IndexError:
             link = rss_d.entries[0]['link']
         sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
         last_link = str(rss_d.entries[0]['link'])
-        last_title = str(rss_d.entries[0]['title'])
-
-        # Update the new_hash only in the rss_dict
+        last_title = new_title
         with rss_dict_lock:
             if len(rss_dict) == 0:
                 rss_job.enabled = True
-            rss_dict[new_hash] = [last_link, last_title]
+            rss_dict[new_hash] = [last_link, new_title]
 
-        DbManager().rss_add(feed_link, last_link, last_title, None)
+        DbManager().rss_add(feed_link, last_link, new_title, None)
 
         sendMessage(sub_msg, context.bot, update.message)
         LOGGER.info(f"RSS Feed Added: {feed_link}")
 
     except IndexError:
-        # Error handling for incorrect command usage
-        msg = "Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com new_torrent_hash"
+        msg = "Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com new_title"
         sendMessage(msg, context.bot, update.message)
 
 def rss_unsub(update, context):
