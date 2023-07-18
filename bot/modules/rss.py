@@ -92,15 +92,16 @@ def rss_unsub(update, context):
         title = context.args[0]
         exists = rss_dict.get(title)
         if exists is None:
-            msg = "Rss link not exists! Nothing removed!"
+            msg = f"Rss link with Title: <code>{title}</code> does not exist! Nothing removed!"
             LOGGER.error(msg)
             sendMessage(msg, context.bot, update.message)
         else:
             DbManager().rss_delete(title)
             with rss_dict_lock:
                 del rss_dict[title]
-            sendMessage(f"Rss link with Title: <code>{title}</code> has been removed!", context.bot, update.message)
-            LOGGER.info(f"Rss link with Title: {title} has been removed!")
+            msg = f"Rss link with Title: <code>{title}</code> has been removed!"
+            sendMessage(msg, context.bot, update.message)
+            LOGGER.info(msg)
     except IndexError:
         sendMessage(f"Use this format to remove feed url:\n/{BotCommands.RssUnSubCommand} Title", context.bot, update.message)
 
