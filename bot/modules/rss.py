@@ -34,7 +34,7 @@ def rss_get(update, context):
         feed_url = rss_dict.get(title)
         if feed_url is not None and count > 0:
             try:
-                msg = sendMessage(f"Getting the last <b>{count}</b> item(s) from {title}", context.bot, update.message)
+                msg = context.bot.send_message(update.message.chat_id, f"Getting the last {count} item(s) from {title}")
                 rss_d = feedparse(feed_url[0])
                 item_info = ""
                 for item_num in range(count):
@@ -46,18 +46,18 @@ def rss_get(update, context):
                         link = rss_d.entries[item_num]['link']
                     item_info += f"<b>Name: </b><code>{rss_d.entries[item_num]['title'].replace('>', '').replace('<', '')}</code>\n"
                     item_info += f"<b>Link: </b><code>{link}</code>\n\n"
-                editMessage(item_info, msg)
+                context.bot.edit_message_text(chat_id=update.message.chat_id, message_id=msg.message_id, text=item_info, parse_mode="HTML")
             except IndexError as e:
                 LOGGER.error(str(e))
-                editMessage("Parse depth exceeded. Try again with a lower value.", msg)
+                context.bot.edit_message_text(chat_id=update.message.chat_id, message_id=msg.message_id, text="Parse depth exceeded. Try again with a lower value.")
             except Exception as e:
                 LOGGER.error(str(e))
-                editMessage(str(e), msg)
+                context.bot.edit_message_text(chat_id=update.message.chat_id, message_id=msg.message_id, text=str(e))
         else:
-            sendMessage("Enter a valid title and count.", context.bot, update.message)
+            context.bot.send_message(update.message.chat_id, "Enter a valid title and count.")
     except (IndexError, ValueError):
-        sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title Count", context.bot, update.message)
-
+        context.bot.send_message(update.message.chat_id, f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title Count")
+        
 def rss_sub(update, context):
     try:
         args = update.message.text.split(maxsplit=1)
