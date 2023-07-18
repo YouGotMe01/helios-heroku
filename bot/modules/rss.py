@@ -28,8 +28,9 @@ def rss_list(update, context):
 
 def rss_get(update, context):
     try:
-        title = context.args[0]
-        count = int(context.args[1])
+        args = update.message.text.split(maxsplit=2)
+        title = args[1].strip()
+        count = int(args[2].strip())
         feed_url = rss_dict.get(title)
         if feed_url is not None and count > 0:
             try:
@@ -37,6 +38,8 @@ def rss_get(update, context):
                 rss_d = feedparse(feed_url[0])
                 item_info = ""
                 for item_num in range(count):
+                    if item_num >= len(rss_d.entries):
+                        break
                     try:
                         link = rss_d.entries[item_num]['links'][1]['href']
                     except IndexError:
@@ -51,9 +54,9 @@ def rss_get(update, context):
                 LOGGER.error(str(e))
                 editMessage(str(e), msg)
         else:
-            sendMessage("Enter a vaild title/value.", context.bot, update.message)
+            sendMessage("Enter a valid title and count.", context.bot, update.message)
     except (IndexError, ValueError):
-        sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
+        sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title Count", context.bot, update.message)
 
 def rss_sub(update, context):
     try:
