@@ -155,12 +155,12 @@ def rss_set_update(update, context):
         except:
             pass
             
-def rss_monitor(context):
+ def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
             rss_job.enabled = False
             return
-        rss_saver = rss_dict
+        rss_saver = rss_dict.copy()  # Make a copy of rss_dict to avoid modifying it during iteration
     for name, data in rss_saver.items():
         try:
             rss_d = feedparse(data[0])
@@ -178,8 +178,8 @@ def rss_monitor(context):
                           Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 parse = True
-                for list in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
+                for lst in data[3]:
+                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in lst):
                         parse = False
                         feed_count += 1
                         break
@@ -190,7 +190,7 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']                
                 feed_msg = f"New Torrent Hash: {url}"
-                sendMessage(feed_msg, context.bot)                
+                sendMessage(feed_msg, context.bot, None)  # Pass None as the message argument
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
@@ -199,7 +199,7 @@ def rss_monitor(context):
                     for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}):
                         url = pqrs.get('href')
                     feed_msg = f"{RSS_COMMAND} {url}"
-                    sendRss(feed_msg, context.bot)                
+                    sendRss(feed_msg, context.bot, None)  # Pass None as the message argument
                 feed_count += 1
                 sleep(5)                
             DbManager().rss_update(name, str(last_link), str(last_title))
@@ -210,7 +210,7 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-            
+          
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
