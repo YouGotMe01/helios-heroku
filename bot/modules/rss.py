@@ -56,35 +56,57 @@ def rss_get(update, context):
         else:
             context.bot.send_message(update.message.chat_id, "Enter a valid title and count.")
     except (IndexError, ValueError):
-        context.bot.send_message(update.message.chat_id, f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title Count")
-                
+        context.bot.send_message)
+        
 def rss_sub(update, context):
     try:
-        args = update.message.text.split(maxsplit=1)
-        feed_link, new_title = args[1].strip().split(maxsplit=1)
-        rss_d = feedparse(feed_link)
-        sub_msg = "<b>Subscribed!</b>"
-        sub_msg += f"\n\n<b>Feed Url: </b>{feed_link}"
-        sub_msg += f"\n\n<b>Latest record for </b>{new_title}:"
-        try:
-            link = rss_d.entries[0]['links'][1]['href']
-        except IndexError:
-            link = rss_d.entries[0]['link']
-        sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
-        last_link = str(rss_d.entries[0]['link'])
-        last_title = new_title
-        new_hash = hashlib.md5(f"{last_link}{last_title}".encode()).hexdigest()
-        with rss_dict_lock:
-            if len(rss_dict) == 0:
-                rss_job.enabled = True
-            rss_dict[new_hash] = [last_link, last_title]
-        DbManager().rss_add(feed_link, last_link, new_title, None)
-        sendMessage(sub_msg, context.bot, update.message)
-        LOGGER.info(f"RSS Feed Added: {feed_link}")
-    except IndexError:
-        msg = "Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com new_title"
-        sendMessage(msg, context.bot, update.message)
+        args = update.message.text.split(maxsplit=3)
+        title = args[1].strip()
+        feed_link = args[2].strip()
 
+        exists = rss_dict.get(title)
+        if exists is not None:
+            LOGGER.error("This title is already subscribed! Choose another title.")
+            return sendMessage("This title is already subscribed! Choose another title.", context.bot, update.message)
+        
+        try:
+            rss_d = feedparse(feed_link)
+            sub_msg = "<b>Subscribed!</b>"
+            sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed URL: </b>{feed_link}"
+            sub_msg += f"\n\n<b>Latest record for </b>{rss_d.feed.title}:"
+            sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
+            
+            try:
+                link = rss_d.entries[0]['links'][1]['href']
+            except IndexError:
+                link = rss_d.entries[0]['link']
+            
+            sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
+            
+            last_link = str(rss_d.entries[0]['link'])
+            last_title = str(rss_d.entries[0]['title'])
+            
+            DbManager().rss_add(title, feed_link, last_link, last_title, None)
+            
+            with rss_dict_lock:
+                if len(rss_dict) == 0:
+                    rss_job.enabled = True
+                rss_dict[title] = [feed_link, last_link, last_title, None]
+            
+            sendMessage(sub_msg, context.bot, update.message)
+            LOGGER.info(f"RSS Feed Added: {title} - {feed_link}")
+        except (IndexError, AttributeError) as e:
+            LOGGER.error(str(e))
+            msg = "The link doesn't seem to be an RSS feed or it's region-blocked!"
+            sendMessage(msg, context.bot, update.message)
+        except Exception as e:
+            LOGGER.error(str(e))
+            sendMessage(str(e), context.bot, update.message)
+    except IndexError:
+        msg = f"Use this format to add a feed URL:\n/{BotCommands.RssSubCommand} Title https://www.rss-url.com"
+        msg += "\n\nExample: /rss_sub MyFeed https://www.example.com/rss-feed.xml"
+        sendMessage(msg, context.bot, update.message)
+        
 def rss_unsub(update, context):
     try:
         title = context.args[0]
@@ -152,7 +174,7 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-            
+           
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -162,14 +184,16 @@ def rss_monitor(context):
     for name, data in rss_saver.items():
         try:
             rss_d = feedparse(data[0])
-            last_link = rss_d.entries[0]['link']
-            last_title = rss_d.entries[0]['title']
-            if data[1] == last_link or data[2] == last_title:
-                continue
+            if data[1] == rss_d.entries[0]['link']:
+                last_title = rss_d.entries[0]['title']
+                if data[2] == last_title:
+                    continue
+            else:
+                last_title = rss_d.entries[0]['title']
             feed_count = 0
             while True:
                 try:
-                    if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
+                    if data[1] == rss_d.entries[feed_count]['link'] and data[2] == rss_d.entries[feed_count]['title']:
                         break
                 except IndexError:
                     LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
@@ -184,26 +208,26 @@ def rss_monitor(context):
                 if not parse:
                     continue
                 try:
-                    url = rss_d.entries[feed_count]['links'][1]['href']
+                    new_link = rss_d.entries[feed_count]['links'][1]['href']
+                    new_title = rss_d.entries[feed_count]['title']
+                    if RSS_COMMAND is not None:
+                        scraper = cloudscraper.create_scraper(allow_brotli=False)
+                        page_content = scraper.get(new_link).text
+                        soup = BeautifulSoup(page_content, 'html.parser')
+                        magnet_links = soup.find_all('a', href=re.compile(r'^magnet:'))
+                        if magnet_links:
+                            magnet_link = magnet_links[0]['href']
+                            feed_msg = f"{RSS_COMMAND} {magnet_link}"
+                            sendRss(feed_msg, context.bot)
                 except IndexError:
-                    url = rss_d.entries[feed_count]['link']
-                new_hash = hashlib.md5(f"{last_link}{last_title}".encode()).hexdigest()
-                if RSS_COMMAND is not None:
-                    hijk = url
-                    scraper = cloudscraper.create_scraper(allow_brotli=False)
-                    lmno = scraper.get(hijk).text
-                    soup4 = BeautifulSoup(lmno, 'html.parser')
-                    for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}):
-                        url = pqrs.get('href')
-                    feed_msg = f"{RSS_COMMAND} {url}"
-                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=feed_msg)
+                    LOGGER.warning(f"No link found for this feed: {name}, entry index: {feed_count}")
                 feed_count += 1
                 sleep(5)
-            DbManager().rss_update(name, str(last_link), str(last_title))
+            DbManager().rss_update(name, data[1], str(last_title))
             with rss_dict_lock:
-                rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
+                rss_dict[name] = [data[0], data[1], str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
-            LOGGER.info(f"Last item: {last_link}")
+            LOGGER.info(f"Last item: {data[1]}")
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
