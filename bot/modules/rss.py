@@ -189,8 +189,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['links'][1]['href']
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
-                feed_msg = f"New Torrent Hash: {url}"
-                context.bot.send_message(chat_id=RSS_CHAT_ID, text=feed_msg)
+              
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
