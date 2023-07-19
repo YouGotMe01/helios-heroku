@@ -57,7 +57,7 @@ def rss_get(update, context):
             context.bot.send_message(update.message.chat_id, "Enter a valid title and count.")
     except (IndexError, ValueError):
         context.bot.send_message(update.message.chat_id, f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title Count")
-        
+                
 def rss_sub(update, context):
     try:
         args = update.message.text.split(maxsplit=1)
