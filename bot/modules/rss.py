@@ -196,7 +196,7 @@ def rss_monitor(context):
                     for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}):
                         url = pqrs.get('href')
                     feed_msg = f"{RSS_COMMAND} {url}"
-                    context.bot.send_message(chat_id=RSS_CHAT_ID)
+                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=feed_msg)
                 feed_count += 1
                 sleep(5)
             DbManager().rss_update(name, str(last_link), str(last_title))
