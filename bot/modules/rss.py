@@ -73,16 +73,14 @@ def rss_sub(update, context):
         sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
         last_link = str(rss_d.entries[0]['link'])
         last_title = new_title
+        new_hash = hashlib.md5(f"{last_link}{last_title}".encode()).hexdigest()
         with rss_dict_lock:
             if len(rss_dict) == 0:
                 rss_job.enabled = True
-            rss_dict[new_hash] = [last_link, new_title]
-
+            rss_dict[new_hash] = [last_link, last_title]
         DbManager().rss_add(feed_link, last_link, new_title, None)
-
         sendMessage(sub_msg, context.bot, update.message)
         LOGGER.info(f"RSS Feed Added: {feed_link}")
-
     except IndexError:
         msg = "Use this format to add feed URL:\n/{BotCommands.RssSubCommand} https://www.rss-url.com new_title"
         sendMessage(msg, context.bot, update.message)
@@ -189,7 +187,7 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['links'][1]['href']
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
-              
+                new_hash = hashlib.md5(f"{last_link}{last_title}".encode()).hexdigest()
                 if RSS_COMMAND is not None:
                     hijk = url
                     scraper = cloudscraper.create_scraper(allow_brotli=False)
@@ -198,7 +196,7 @@ def rss_monitor(context):
                     for pqrs in soup4.find_all('a', attrs={'href': re.compile(r"^magnet")}):
                         url = pqrs.get('href')
                     feed_msg = f"{RSS_COMMAND} {url}"
-                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=feed_msg)
+                    context.bot.send_message(chat_id=RSS_CHAT_ID)
                 feed_count += 1
                 sleep(5)
             DbManager().rss_update(name, str(last_link), str(last_title))
@@ -209,7 +207,7 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-
+            
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
