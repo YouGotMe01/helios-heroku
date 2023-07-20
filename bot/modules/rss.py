@@ -174,7 +174,7 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-            
+           
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -183,7 +183,10 @@ def rss_monitor(context):
         rss_saver = rss_dict.copy()  # Make a copy of rss_dict to avoid modifying it during iteration
     for name, data in rss_saver.items():
         try:
-            rss_d = feedparse(data[0])
+            rss_d = feedparser.parse(data[0])
+            LOGGER.info(f"Feed Name: {name} - Feed Link: {data[0]}")
+            LOGGER.info(f"Number of entries: {len(rss_d.entries)}")
+            LOGGER.info(f"First entry: {rss_d.entries[0]}")
             if data[1] == rss_d.entries[0]['link']:
                 last_title = rss_d.entries[0]['title']
                 if data[2] == last_title:
@@ -219,6 +222,8 @@ def rss_monitor(context):
                             magnet_link = magnet_links[0]['href']
                             feed_msg = f"{RSS_COMMAND} {magnet_link}"
                             sendRss(feed_msg, context.bot)
+                        else:
+                            LOGGER.warning(f"No magnet link found for entry {feed_count} in feed {name}")
                     else:
                         LOGGER.warning(f"No link found for this feed: {name}, entry index: {feed_count}")
                 except IndexError:
@@ -230,10 +235,16 @@ def rss_monitor(context):
                 rss_dict[name] = [data[0], data[1], str(last_title), data[3]]
             LOGGER.info(f"Feed Name: {name}")
             LOGGER.info(f"Last item: {data[1]}")
+        except feedparser.exceptions.FeedParserError as e:
+            LOGGER.error(f"Error parsing feed {name}: {e}")
+            continue
+        except IndexError:
+            LOGGER.warning(f"No entries found for feed {name}")
+            continue
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-                    
+
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
