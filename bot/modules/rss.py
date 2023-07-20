@@ -196,7 +196,8 @@ def rss_monitor(context):
                     if data[1] == rss_d.entries[feed_count]['link'] and data[2] == rss_d.entries[feed_count]['title']:
                         break
                 except IndexError:
-                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. Maybe you need to use less RSS_DELAY to not miss some torrents")
+                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
+                          Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 parse = True
                 for lst in data[3]:
@@ -207,24 +208,21 @@ def rss_monitor(context):
                 if not parse:
                     continue
                 try:
-                    # Check if the link exists before accessing it
-                    if 'links' in rss_d.entries[feed_count]:
-                        new_link = rss_d.entries[feed_count]['links'][1]['href']
-                    else:
-                        new_link = rss_d.entries[feed_count]['link']
-
+                    link = rss_d.entries[feed_count]['links'][1]['href']
                     new_title = rss_d.entries[feed_count]['title']
-                    if RSS_COMMAND is not None:
+                    if RSS_COMMAND is not None and link:
                         scraper = cloudscraper.create_scraper(allow_brotli=False)
-                        page_content = scraper.get(new_link).text
+                        page_content = scraper.get(link).text
                         soup = BeautifulSoup(page_content, 'html.parser')
                         magnet_links = soup.find_all('a', href=re.compile(r'^magnet:'))
                         if magnet_links:
                             magnet_link = magnet_links[0]['href']
                             feed_msg = f"{RSS_COMMAND} {magnet_link}"
                             sendRss(feed_msg, context.bot)
+                    else:
+                        LOGGER.warning(f"No link found for this feed: {name}, entry index: {feed_count}")
                 except IndexError:
-                    LOGGER.warning(f"No link found for this feed: {name}, entry index: {feed_count}")
+                    LOGGER.warning(f"No link found for entry {feed_count} in feed {name}")
                 feed_count += 1
                 sleep(5)
             DbManager().rss_update(name, data[1], str(last_title))
