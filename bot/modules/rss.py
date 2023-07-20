@@ -174,7 +174,7 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-           
+            
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
@@ -196,8 +196,7 @@ def rss_monitor(context):
                     if data[1] == rss_d.entries[feed_count]['link'] and data[2] == rss_d.entries[feed_count]['title']:
                         break
                 except IndexError:
-                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
-                          Maybe you need to use less RSS_DELAY to not miss some torrents")
+                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 parse = True
                 for lst in data[3]:
@@ -208,7 +207,12 @@ def rss_monitor(context):
                 if not parse:
                     continue
                 try:
-                    new_link = rss_d.entries[feed_count]['links'][1]['href']
+                    # Check if the link exists before accessing it
+                    if 'links' in rss_d.entries[feed_count]:
+                        new_link = rss_d.entries[feed_count]['links'][1]['href']
+                    else:
+                        new_link = rss_d.entries[feed_count]['link']
+
                     new_title = rss_d.entries[feed_count]['title']
                     if RSS_COMMAND is not None:
                         scraper = cloudscraper.create_scraper(allow_brotli=False)
@@ -231,7 +235,7 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-            
+                    
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
