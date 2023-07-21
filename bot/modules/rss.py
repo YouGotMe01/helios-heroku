@@ -1,4 +1,5 @@
 import re
+import requests
 import cloudscraper 
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
@@ -174,16 +175,11 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-            
+
 def rss_monitor(context):
-    with rss_dict_lock:
-        if len(rss_dict) == 0:
-            rss_job.enabled = False
-            return
-        rss_saver = rss_dict.copy()  # Make a copy of rss_dict to avoid modifying it during iteration
     for name, data in rss_saver.items():
         try:
-            rss_d = feedparse(data[0])
+            rss_d = feedparser.parse(data[0])
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
             if data[1] == last_link or data[2] == last_title:
@@ -206,24 +202,28 @@ def rss_monitor(context):
                         break
                 if not parse:
                     continue
-                try:
-                    url = rss_d.entries[feed_count]['links'][1]['href']
-                except IndexError:
-                    url = rss_d.entries[feed_count]['link']
-                # Scrape the magnet link from the URL using cloudscraper and BeautifulSoup
-                scraper = cloudscraper.create_scraper(allow_brotli=False)
-                page_content = scraper.get(url).text
-                soup = BeautifulSoup(page_content, 'html.parser')
-                magnet_links = soup.find_all('a', href=re.compile(r"magnet:\?xt=urn:btih:[A-Fa-f0-9]+"))
-                if magnet_links:
-                    magnet_link = magnet_links[0]['href']
-                    # Customize the RSS comment here
-                    rss_comment = "/leech3@Teamwdl3bot"
-                    # Send the magnet link with the RSS comment
-                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=f"{rss_comment} <code>{magnet_link}</code>", parse_mode='HTML')
-                    new_feed_found = True
+                # Check if the entry contains a torrent file link
+                if 'torrent' in rss_d.entries[feed_count]:
+                    torrent_url = rss_d.entries[feed_count]['torrent']['href']
+
+                    # Download the torrent file
+                    response = requests.get(torrent_url)
+
+                    if response.status_code == 200:
+                        # Save the torrent file with a meaningful name
+                        file_name = f"{name}_{feed_count}.torrent"
+
+                        with open(file_name, 'wb') as file:
+                            file.write(response.content)
+
+                        LOGGER.info(f"Torrent file downloaded: {file_name}")
+
+                        new_feed_found = True
+                    else:
+                        LOGGER.warning(f"Failed to download torrent file for this feed: {name}, entry index: {feed_count}")
                 else:
-                    LOGGER.warning(f"No magnet link found for this feed: {name}, entry index: {feed_count}")
+                    LOGGER.warning(f"No torrent file found for this feed: {name}, entry index: {feed_count}")
+
                 feed_count += 1
                 sleep(5)
             if new_feed_found:
@@ -235,7 +235,7 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-            
+
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
