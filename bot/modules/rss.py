@@ -224,7 +224,7 @@ def rss_monitor(context):
                     context.bot.send_message(chat_id=RSS_CHAT_ID, text=f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                                                                      f"<b>Box Types: </b><code>{box_types}</code>\n"
                                                                      f"<b>Link: </b><code>{url}</code>\n\n"
-                                                                     f"<b>Magnet Link: </b><code>{magnet_link}</code>",
+                                                                     f"<b>Magnet Link: </b><code>leech3@Teamwdl3bot{magnet_link}</code>",
                                              parse_mode='HTML')
                     new_feed_found = True
                 else:
