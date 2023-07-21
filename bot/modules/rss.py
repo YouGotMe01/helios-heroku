@@ -220,8 +220,7 @@ def rss_monitor(context):
                     # Customize the RSS comment here
                     rss_comment = "/leech3@Teamwdl3bot"
                     # Send the magnet link with the RSS comment
-                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=f"{rss_comment}\n\n<b>Magnet Link: </b><code>{magnet_link}</code>", parse_mode='HTML')
-                    
+                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=f"{rss_comment}\n\n<code>{magnet_link}</code>", parse_mode='HTML')
                     new_feed_found = True
                 else:
                     LOGGER.warning(f"No magnet link found for this feed: {name}, entry index: {feed_count}")
