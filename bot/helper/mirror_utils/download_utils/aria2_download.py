@@ -145,7 +145,7 @@ def __onBtDownloadComplete(api, gid):
                 download_dict[listener.uid] = AriaDownloadStatus(gid, listener)
                 download_dict[listener.uid].start_time = seed_start_time
             LOGGER.info(f"Seeding started: {download.name} - Gid: {gid}")
-            download = download.live
+            download = api.get_download(gid)  # Add this line to reassign 'download' variable after removal
             if download.is_complete:
                 if dl := getDownloadByGid(gid):
                     LOGGER.info(f"Cancelling Seed: {download.name}")
