@@ -218,8 +218,11 @@ def rss_monitor(context):
                 magnet_links = soup.find_all('a', href=re.compile(r'^magnet:'))
                 if magnet_links:
                     magnet_link = magnet_links[0]['href']
-                    # Send the magnet link and title of the new feed item using bot.send_message()
+                    # Customize the box types here based on your requirements
+                    box_types = "720p WEB-DL"  # Add the desired box types here
+                    # Send the magnet link and title of the new feed item with box types
                     context.bot.send_message(chat_id=RSS_CHAT_ID, text=f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
+                                                                     f"<b>Box Types: </b><code>{box_types}</code>\n"
                                                                      f"<b>Link: </b><code>{url}</code>\n\n"
                                                                      f"<b>Magnet Link: </b><code>{magnet_link}</code>",
                                              parse_mode='HTML')
@@ -238,7 +241,7 @@ def rss_monitor(context):
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-
+            
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
