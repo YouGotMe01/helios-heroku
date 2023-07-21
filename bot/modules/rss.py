@@ -175,44 +175,91 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
+# Assuming 'rss_dict' is a dictionary containing data with 'name' as keys and 'data' as values
+rss_dict = {
+    'item1': {'link': 'rss_link1', 'last_link': 'last_link1', 'last_title': 'last_title1', 'keywords': ['keyword1', 'keyword2']},
+    'item2': {'link': 'rss_link2', 'last_link': 'last_link2', 'last_title': 'last_title2', 'keywords': ['keyword3', 'keyword4']},
+    # Add more items as needed
+}
+
+# Define a lock for thread safety while working with rss_dict
+rss_dict_lock = Lock()
+
+# Assuming 'LOGGER' is a logging instance for capturing logs
+# Configure the logger based on your requirements
+LOGGER = logging.getLogger('rss_monitor')
+LOGGER.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+LOGGER.addHandler(stream_handler)
+
+# Sample feedparse function (you should define this according to your specific requirements)
+def feedparse(feed_url):
+    # Implement your logic to parse the feed and return the parsed data
+    # For example, you might use feedparser library to parse the feed
+    return parsed_data
+
+# Sample function for updating the database (you should implement this based on your database setup)
+def update_database(feed_name, last_link, last_title):
+    # Implement your logic to update the database with the latest feed data
+    # For example, you might use SQLAlchemy to update a database table
+    pass
+
+# Sample RSS job (you might have this in your scheduler or context)
+class RSSJob:
+    def __init__(self):
+        self.enabled = True  # Set to False to stop the job
+        # Add any other job-related configurations as needed
+
+# Initialize the RSS job
+rss_job = RSSJob()
 
 def rss_monitor(context):
+    with rss_dict_lock:
+        if len(rss_dict) == 0:
+            rss_job.enabled = False
+            return
+
+        rss_saver = rss_dict.copy()
+
     for name, data in rss_saver.items():
         try:
-            rss_d = feedparser.parse(data[0])
+            rss_d = feedparse(data['link'])
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
-            if data[1] == last_link or data[2] == last_title:
+            if data['last_link'] == last_link or data['last_title'] == last_title:
                 continue
+
             feed_count = 0
-            new_feed_found = False  # Flag to keep track of whether a new feed item has been found
+            new_feed_found = False
+
             while True:
                 try:
-                    if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
+                    if data['last_link'] == rss_d.entries[feed_count]['link'] or data['last_title'] == rss_d.entries[feed_count]['title']:
                         break
                 except IndexError:
-                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
-                          Maybe you need to use less RSS_DELAY to not miss some torrents")
+                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. Maybe you need to use less RSS_DELAY to not miss some items")
                     break
+
                 parse = True
-                for lst in data[3]:
+                for lst in data['keywords']:
                     if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in lst):
                         parse = False
                         feed_count += 1
                         break
+
                 if not parse:
                     continue
+
                 # Check if the entry contains a torrent file link
                 if 'torrent' in rss_d.entries[feed_count]:
                     torrent_url = rss_d.entries[feed_count]['torrent']['href']
 
-                    # Download the torrent file
                     response = requests.get(torrent_url)
 
                     if response.status_code == 200:
-                        # Save the torrent file with a meaningful name
                         file_name = f"{name}_{feed_count}.torrent"
-
                         with open(file_name, 'wb') as file:
                             file.write(response.content)
 
@@ -226,15 +273,26 @@ def rss_monitor(context):
 
                 feed_count += 1
                 sleep(5)
+
             if new_feed_found:
-                DbManager().rss_update(name, str(last_link), str(last_title))
+                # Update the database with the latest link and title
+                update_database(name, str(last_link), str(last_title))
+
+                # Update the rss_dict with the latest link and title
                 with rss_dict_lock:
-                    rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
+                    rss_dict[name]['last_link'] = str(last_link)
+                    rss_dict[name]['last_title'] = str(last_title)
+
                 LOGGER.info(f"Feed Name: {name}")
                 LOGGER.info(f"Last item: {last_link}")
+
         except Exception as e:
-            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data['link']}")
             continue
+
+# Call the rss_monitor function and pass 'rss_dict' as an argument
+rss_monitor(your_context_data, rss_dict)
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
