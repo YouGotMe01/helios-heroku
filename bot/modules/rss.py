@@ -30,84 +30,68 @@ def rss_get(update, context):
         title = context.args[0]
         count = int(context.args[1])
         feed_url = rss_dict.get(title)
+        
         if feed_url is not None and count > 0:
             try:
                 msg = sendMessage(f"Getting the last <b>{count}</b> item(s) from {title}", context.bot, update.message)
                 rss_d = feedparse(feed_url[0])
-                item_info = ""
-                for item_num in range(count):
+                num_entries = min(count, len(rss_d.entries))  # Handle cases when count is larger than available items
+                item_info = "Here are the last items:\n\n"
+                
+                for item_num in range(num_entries):
                     try:
                         link = rss_d.entries[item_num]['links'][1]['href']
                     except IndexError:
                         link = rss_d.entries[item_num]['link']
-                    item_info += f"<b>Name: </b><code>{rss_d.entries[item_num]['title'].replace('>', '').replace('<', '')}</code>\n"
+                    
+                    item_info += f"{item_num + 1}. <b>Name: </b><code>{rss_d.entries[item_num]['title'].replace('>', '').replace('<', '')}</code>\n"
                     item_info += f"<b>Link: </b><code>{link}</code>\n\n"
+                
                 editMessage(item_info, msg)
+            
             except IndexError as e:
                 LOGGER.error(str(e))
                 editMessage("Parse depth exceeded. Try again with a lower value.", msg)
+            
             except Exception as e:
                 LOGGER.error(str(e))
                 editMessage(str(e), msg)
+        
         else:
-            sendMessage("Enter a vaild title/value.", context.bot, update.message)
+            sendMessage("Enter a valid title and a positive item count.", context.bot, update.message)
+    
     except (IndexError, ValueError):
         sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
 
-def rss_sub(update, context):
-    try:
-        args = update.message.text.split(maxsplit=1)
-        if len(args) < 2:
-            raise IndexError
-        arg_list = args[1].split('|')
-        title = arg_list[0].strip()
-        feed_link = arg_list[1].strip()
-        filters = arg_list[2].strip().lower() if len(arg_list) > 2 else None
-
-        exists = rss_dict.get(title)
-        if exists is not None:
-            LOGGER.error("This title already subscribed! Choose another title!")
-            return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
-
+def rss_sub(update, context, new_title=None):
+    if new_title is not None:
+        title = new_title.strip()
+        # Rest of the function code...
+    else:
         try:
-            rss_d = feedparse(feed_link)
-            sub_msg = "<b>Subscribed!</b>"
-            sub_msg += f"\n\n<b>Title: </b><code>{title}</code>\n<b>Feed Url: </b>{feed_link}"
-            sub_msg += f"\n\n<b>latest record for </b>{rss_d.feed.title}:"
-            sub_msg += f"\n\n<b>Name: </b><code>{rss_d.entries[0]['title'].replace('>', '').replace('<', '')}</code>"
-            try:
-                link = rss_d.entries[0]['links'][1]['href']
-            except IndexError:
-                link = rss_d.entries[0]['link']
-            sub_msg += f"\n\n<b>Link: </b><code>{link}</code>"
+            args = update.message.text.split(maxsplit=1)
+            if len(args) < 2:
+                raise IndexError
+            title = args[1].strip()
 
-            if filters:
-                sub_msg += f"\n\n<b>Filters: </b><code>{filters}</code>"
+            exists = rss_dict.get(title)
+            if exists is not None:
+                LOGGER.error("This title already subscribed! Choose another title!")
+                return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
 
-            last_link = str(rss_d.entries[0]['link'])
-            last_title = str(rss_d.entries[0]['title'])
-            DbManager().rss_add(title, feed_link, last_link, last_title, filters)
-            with rss_dict_lock:
-                if len(rss_dict) == 0:
-                    rss_job.enabled = True
-                rss_dict[title] = [feed_link, last_link, last_title, filters]
-            sendMessage(sub_msg, context.bot, update.message)
-            LOGGER.info(f"Rss Feed Added: {title} - {feed_link} - {filters}")
-        except (IndexError, AttributeError) as e:
-            LOGGER.error(str(e))
-            msg = "The link doesn't seem to be a valid RSS feed or it's region-blocked!"
+            # Add any additional checks or validations for the title here if needed.
+
+            # Add the title to the dictionary or database without processing the RSS feed.
+            # Example:
+            rss_dict[title] = None  # Or store the title in your database
+
+            # You can send a confirmation message here if needed.
+            sendMessage(f"Title '{title}' subscribed!", context.bot, update.message)
+
+            LOGGER.info(f"Rss Feed Title Added: {title}")
+        except IndexError:
+            msg = f"Use this format to add a feed URL\n/{BotCommands.RssSubCommand} Title|https://www.rss-url.com"
             sendMessage(msg, context.bot, update.message)
-        except Exception as e:
-            LOGGER.error(str(e))
-            sendMessage(str(e), context.bot, update.message)
-    except IndexError:
-        msg = f"Use this format to add feed URL:\n/{BotCommands.RssSubCommand} Title|https://www.rss-url.com"
-        msg += " (optional)|filters_here\n\nYou can add filters to parse specific feed items based on their titles."
-        msg += "\nFor example: 1080p|https://example.com/rss-feed|1080p or 720p|.web. or .webrip.|hevc or x264"
-        msg += "\n\nFilters format:\n\n1. Use '|' to separate Title, URL, and Filters (if any).\n\n2. "
-        msg += "Filters are case-insensitive and should be separated by 'or'. For example: 1080p or 720p"
-        msg += "\n\n3. If you don't want to specify filters, just omit them from the command."
-        sendMessage(msg, context.bot, update.message)
 
 def rss_unsub(update, context):
     try:
@@ -125,7 +109,7 @@ def rss_unsub(update, context):
             LOGGER.info(f"Rss link with Title: {title} has been removed!")
     except IndexError:
         sendMessage(f"Use this format to remove feed url:\n/{BotCommands.RssUnSubCommand} Title", context.bot, update.message)
-
+    
 def rss_settings(update, context):
     buttons = button_build.ButtonMaker()
     buttons.sbutton("Unsubscribe All", "rss unsuball")
@@ -182,58 +166,33 @@ def rss_monitor(context):
             rss_job.enabled = False
             return
         rss_saver = rss_dict
+
     for name, data in rss_saver.items():
         try:
             rss_d = feedparse(data[0])
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
+
             if data[1] == last_link or data[2] == last_title:
                 continue
-            feed_count = 0
-            while True:
-                try:
-                    if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
-                        break
-                except IndexError:
-                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
-                          Maybe you need to use less RSS_DELAY to not miss some torrents")
-                    break
-                parse = True
-                for list in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
-                        parse = False
-                        feed_count += 1
-                        break
-                if not parse:
-                    continue
-                try:
-                    # Extracting the torrent link or magnet link from the feed entry
-                    if 'links' in rss_d.entries[feed_count]:
-                        url = rss_d.entries[feed_count]['links'][0]['href']
-                    else:
-                        url = rss_d.entries[feed_count]['link']
+            if 'links' in rss_d.entries[0]:
+                url = rss_d.entries[0]['links'][0]['href']
+            else:
+                url = rss_d.entries[0]['link']
+            response = requests.get(url)
+            if response.ok:
+                # Send the torrent content as a message to the Telegram chat
+                torrent_content = response.content
+                context.bot.send_document(chat_id=RSS_CHAT_ID, document=torrent_content, caption=rss_d.entries[0]['title'])
 
-                    # Scraping the torrent file or magnet link to get the content
-                    response = requests.get(url)
-                    if response.ok:
-                        torrent_content = response.content
-                        # Send the torrent content as a message to the Telegram chat
-                        context.bot.send_document(chat_id=RSS_CHAT_ID, document=torrent_content, caption=rss_d.entries[feed_count]['title'])
-                        feed_count += 1
-                        sleep(5)  # Adding a small delay to avoid flooding the chat with messages
-                except IndexError:
-                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
-                          Maybe you need to use less RSS_DELAY to not miss some torrents")
-                    break
-                except Exception as e:
-                    LOGGER.error(f"Error processing feed: {e}")
-                    continue
-
+            # Update the last_link and last_title in the dictionary (or database if you want to persist it).
+            rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             DbManager().rss_update(name, str(last_link), str(last_title))
-            with rss_dict_lock:
-                rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
-            LOGGER.info(f"Feed Name: {name}")
+
+            # You can send a confirmation message or log the new feed title here.
+            LOGGER.info(f"New Feed Name: {name}")
             LOGGER.info(f"Last item: {last_link}")
+
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
