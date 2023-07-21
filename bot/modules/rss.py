@@ -210,26 +210,20 @@ def rss_monitor(context):
                     url = rss_d.entries[feed_count]['links'][1]['href']
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
-
                 # Scrape the magnet link from the URL using cloudscraper and BeautifulSoup
                 scraper = cloudscraper.create_scraper(allow_brotli=False)
                 page_content = scraper.get(url).text
                 soup = BeautifulSoup(page_content, 'html.parser')
-                magnet_links = soup.find_all('a', href=re.compile(r'^magnet:'))
+                magnet_links = soup.find_all('a', href=re.compile(r"magnet:\?xt=urn:btih:[A-Fa-f0-9]+"))
                 if magnet_links:
                     magnet_link = magnet_links[0]['href']
-                    # Customize the box types here based on your requirements
-                    box_types = "720p WEB-DL"  # Add the desired box types here
-                    # Send the magnet link and title of the new feed item with box types
-                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
-                                                                     f"<b>Box Types: </b><code>{box_types}</code>\n"
-                                                                     f"<b>Link: </b><code>{url}</code>\n\n"
-                                                                     f"<b>Magnet Link: </b><code> /leech3@Teamwdl3bot {magnet_link}</code>",
-                                             parse_mode='HTML')
+                    # Customize the RSS comment here
+                    rss_comment = "leech3@Teamwdl3bot"
+                    # Send the magnet link with the RSS comment
+                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=f"<b>Magnet Link: </b><code>{magnet_link}</code>\n\n{rss_comment}", parse_mode='HTML')
                     new_feed_found = True
                 else:
                     LOGGER.warning(f"No magnet link found for this feed: {name}, entry index: {feed_count}")
-
                 feed_count += 1
                 sleep(5)
             if new_feed_found:
