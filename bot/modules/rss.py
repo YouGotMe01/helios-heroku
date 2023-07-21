@@ -1,4 +1,5 @@
 import re
+import requests
 import cloudscraper 
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
@@ -174,13 +175,13 @@ def rss_set_update(update, context):
             query.message.reply_to_message.delete()
         except:
             pass
-            
+
 def rss_monitor(context):
     with rss_dict_lock:
         if len(rss_dict) == 0:
             rss_job.enabled = False
             return
-        rss_saver = rss_dict.copy()  # Make a copy of rss_dict to avoid modifying it during iteration
+        rss_saver = rss_dict
     for name, data in rss_saver.items():
         try:
             rss_d = feedparse(data[0])
@@ -189,7 +190,6 @@ def rss_monitor(context):
             if data[1] == last_link or data[2] == last_title:
                 continue
             feed_count = 0
-            new_feed_found = False  # Flag to keep track of whether a new feed item has been found
             while True:
                 try:
                     if data[1] == rss_d.entries[feed_count]['link'] or data[2] == rss_d.entries[feed_count]['title']:
@@ -199,43 +199,45 @@ def rss_monitor(context):
                           Maybe you need to use less RSS_DELAY to not miss some torrents")
                     break
                 parse = True
-                for lst in data[3]:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in lst):
+                for list in data[3]:
+                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
                         parse = False
                         feed_count += 1
                         break
                 if not parse:
                     continue
                 try:
-                    url = rss_d.entries[feed_count]['links'][1]['href']
+                    # Extracting the torrent link or magnet link from the feed entry
+                    if 'links' in rss_d.entries[feed_count]:
+                        url = rss_d.entries[feed_count]['links'][0]['href']
+                    else:
+                        url = rss_d.entries[feed_count]['link']
+
+                    # Scraping the torrent file or magnet link to get the content
+                    response = requests.get(url)
+                    if response.ok:
+                        torrent_content = response.content
+                        # Send the torrent content as a message to the Telegram chat
+                        context.bot.send_document(chat_id=RSS_CHAT_ID, document=torrent_content, caption=rss_d.entries[feed_count]['title'])
+                        feed_count += 1
+                        sleep(5)  # Adding a small delay to avoid flooding the chat with messages
                 except IndexError:
-                    url = rss_d.entries[feed_count]['link']
-                # Scrape the magnet link from the URL using cloudscraper and BeautifulSoup
-                scraper = cloudscraper.create_scraper(allow_brotli=False)
-                page_content = scraper.get(url).text
-                soup = BeautifulSoup(page_content, 'html.parser')
-                magnet_links = soup.find_all('a', href=re.compile(r"magnet:\?xt=urn:btih:[A-Fa-f0-9]+"))
-                if magnet_links:
-                    magnet_link = magnet_links[0]['href']
-                    # Customize the RSS comment here
-                    rss_comment = "leech3@Teamwdl3bot"
-                    # Send the magnet link with the RSS comment
-                    context.bot.send_message(chat_id=RSS_CHAT_ID, text=f"{rss_comment} <b>{magnet_link}</b>", parse_mode='HTML')
-                    new_feed_found = True
-                else:
-                    LOGGER.warning(f"No magnet link found for this feed: {name}, entry index: {feed_count}")
-                feed_count += 1
-                sleep(5)
-            if new_feed_found:
-                DbManager().rss_update(name, str(last_link), str(last_title))
-                with rss_dict_lock:
-                    rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
-                LOGGER.info(f"Feed Name: {name}")
-                LOGGER.info(f"Last item: {last_link}")
+                    LOGGER.warning(f"Reached Max index no. {feed_count} for this feed: {name}. \
+                          Maybe you need to use less RSS_DELAY to not miss some torrents")
+                    break
+                except Exception as e:
+                    LOGGER.error(f"Error processing feed: {e}")
+                    continue
+
+            DbManager().rss_update(name, str(last_link), str(last_title))
+            with rss_dict_lock:
+                rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
+            LOGGER.info(f"Feed Name: {name}")
+            LOGGER.info(f"Last item: {last_link}")
         except Exception as e:
             LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
             continue
-            
+
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
