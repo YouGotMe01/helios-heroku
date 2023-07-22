@@ -165,25 +165,28 @@ def rss_monitor(context):
         if len(rss_dict) == 0:
             rss_job.enabled = False
             return
-        rss_saver = rss_dict
+        rss_saver = rss_dict.copy()  # Create a copy of the rss_dict to avoid modifying the original while iterating.
 
     for name, data in rss_saver.items():
         try:
-            rss_d = feedparse(data[0])
+            rss_d = feedparser.parse(data[0])
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
 
             if data[1] == last_link or data[2] == last_title:
                 continue
+
+            # Fetch the torrent content from the link.
             if 'links' in rss_d.entries[0]:
                 url = rss_d.entries[0]['links'][0]['href']
             else:
                 url = rss_d.entries[0]['link']
             response = requests.get(url)
             if response.ok:
-                # Send the torrent content as a message to the Telegram chat
+                # Send the torrent content as a message to the Telegram chat with .torrent extension
                 torrent_content = response.content
-                context.bot.send_document(chat_id=RSS_CHAT_ID, document=torrent_content, caption=rss_d.entries[0]['title'])
+                torrent_filename = f"{rss_d.entries[0]['title']}.torrent"
+                context.bot.send_document(chat_id=RSS_CHAT_ID, document=torrent_content, filename=torrent_filename, caption=rss_d.entries[0]['title'])
 
             # Update the last_link and last_title in the dictionary (or database if you want to persist it).
             rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
