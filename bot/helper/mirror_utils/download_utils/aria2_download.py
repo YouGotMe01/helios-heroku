@@ -87,6 +87,7 @@ def __onDownloadComplete(api, gid):
         download = api.get_download(gid)
     except:
         return
+
     if download.followed_by_ids:
         new_gid = download.followed_by_ids[0]
         LOGGER.info(f'Gid changed from {gid} to {new_gid}')
@@ -108,8 +109,9 @@ def __onDownloadComplete(api, gid):
     else:
         LOGGER.info(f"onDownloadComplete: {download.name} - Gid: {gid}")
         if dl := getDownloadByGid(gid):
-            dl.listener().onDownloadComplete()
-            api.remove([download], force=True, files=True)
+            listener = dl.listener()
+            listener.onDownloadComplete()  # Call onDownloadComplete() directly
+        api.remove([download], force=True, files=True)  # Remove the download after calling onDownloadComplete()
 
 @new_thread
 def __onBtDownloadComplete(api, gid):
