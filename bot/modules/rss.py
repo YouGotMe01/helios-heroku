@@ -169,7 +169,7 @@ def rss_monitor(context):
 
     for name, data in rss_saver.items():
         try:
-            rss_d = feedparser.parse(data[0])
+            rss_d = feedparse(data[0])
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
 
