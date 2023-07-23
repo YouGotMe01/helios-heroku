@@ -62,7 +62,7 @@ def rss_get(update, context):
     
     except (IndexError, ValueError):
         sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
-
+        
 def rss_sub(update, context, new_title=None):
     if new_title is not None:
         title = new_title.strip()
@@ -77,16 +77,16 @@ def rss_sub(update, context, new_title=None):
             feed_url = title_url[1] if len(title_url) > 1 else None
             exists = rss_dict.get(title)
             if exists is not None:
-                # If the title exists, add the new feed URL to the existing list of URLs.
+                # If the title exists, add the new feed URL to the existing dictionary of URLs.
                 if feed_url is not None:
-                    exists.append(feed_url)
+                    exists[feed_url] = {"added": datetime.now()}
                 else:
                     LOGGER.error("No feed URL provided for an existing title!")
                     return sendMessage("No feed URL provided for an existing title! Please provide a feed URL.", context.bot, update.message)
             else:
                 # If the title doesn't exist, create a new entry in the dictionary with the feed URL.
                 if feed_url is not None:
-                    rss_dict[title] = [feed_url]
+                    rss_dict[title] = {feed_url: {"added": datetime.now()}}
                 else:
                     LOGGER.error("No feed URL provided for the new title!")
                     return sendMessage("No feed URL provided for the new title! Please provide a feed URL.", context.bot, update.message)
@@ -95,7 +95,7 @@ def rss_sub(update, context, new_title=None):
         except IndexError:
             msg = f"Use this format to add a feed URL\n/{BotCommands.RssSubCommand} Title|https://www.rss-url.com"
             sendMessage(msg, context.bot, update.message)
-
+            
 def rss_unsub(update, context):
     try:
         title = context.args[0]
