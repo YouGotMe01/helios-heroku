@@ -77,16 +77,21 @@ def rss_sub(update, context, new_title=None):
             feed_url = title_url[1] if len(title_url) > 1 else None
             exists = rss_dict.get(title)
             if exists is not None:
-                # If the title exists, add the new feed URL to the existing dictionary of URLs.
+                # If the title exists, check if the feed URL is already in the list.
                 if feed_url is not None:
-                    exists[feed_url] = {"added": datetime.now()}
+                    for feed in exists:
+                        if feed["url"] == feed_url:
+                            LOGGER.warning(f"Feed URL '{feed_url}' already subscribed to title '{title}'")
+                            sendMessage(f"Feed URL '{feed_url}' already subscribed to title '{title}'", context.bot, update.message)
+                            return
+                    exists.append({"url": feed_url, "added": datetime.now()})
                 else:
                     LOGGER.error("No feed URL provided for an existing title!")
                     return sendMessage("No feed URL provided for an existing title! Please provide a feed URL.", context.bot, update.message)
             else:
                 # If the title doesn't exist, create a new entry in the dictionary with the feed URL.
                 if feed_url is not None:
-                    rss_dict[title] = {feed_url: {"added": datetime.now()}}
+                    rss_dict[title] = [{"url": feed_url, "added": datetime.now()}]
                 else:
                     LOGGER.error("No feed URL provided for the new title!")
                     return sendMessage("No feed URL provided for the new title! Please provide a feed URL.", context.bot, update.message)
@@ -94,8 +99,8 @@ def rss_sub(update, context, new_title=None):
             LOGGER.info(f"Rss Feed Title Added: {title}")
         except IndexError:
             msg = f"Use this format to add a feed URL\n/{BotCommands.RssSubCommand} Title|https://www.rss-url.com"
-            sendMessage(msg, context.bot, update.message)
-            
+            sendMessage(msg, context.bot, update.message)        
+
 def rss_unsub(update, context):
     try:
         title = context.args[0]
