@@ -72,22 +72,25 @@ def rss_sub(update, context, new_title=None):
             args = update.message.text.split(maxsplit=1)
             if len(args) < 2:
                 raise IndexError
-            title = args[1].strip()
-
+            title_url = args[1].strip().split('|', 1)
+            title = title_url[0]
+            feed_url = title_url[1] if len(title_url) > 1 else None
             exists = rss_dict.get(title)
             if exists is not None:
-                LOGGER.error("This title already subscribed! Choose another title!")
-                return sendMessage("This title already subscribed! Choose another title!", context.bot, update.message)
-
-            # Add any additional checks or validations for the title here if needed.
-
-            # Add the title to the dictionary or database without processing the RSS feed.
-            # Example:
-            rss_dict[title] = None  # Or store the title in your database
-
-            # You can send a confirmation message here if needed.
+                # If the title exists, add the new feed URL to the existing list of URLs.
+                if feed_url is not None:
+                    exists.append(feed_url)
+                else:
+                    LOGGER.error("No feed URL provided for an existing title!")
+                    return sendMessage("No feed URL provided for an existing title! Please provide a feed URL.", context.bot, update.message)
+            else:
+                # If the title doesn't exist, create a new entry in the dictionary with the feed URL.
+                if feed_url is not None:
+                    rss_dict[title] = [feed_url]
+                else:
+                    LOGGER.error("No feed URL provided for the new title!")
+                    return sendMessage("No feed URL provided for the new title! Please provide a feed URL.", context.bot, update.message)
             sendMessage(f"Title '{title}' subscribed!", context.bot, update.message)
-
             LOGGER.info(f"Rss Feed Title Added: {title}")
         except IndexError:
             msg = f"Use this format to add a feed URL\n/{BotCommands.RssSubCommand} Title|https://www.rss-url.com"
