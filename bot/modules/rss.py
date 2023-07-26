@@ -2,6 +2,7 @@ import re
 import requests
 import cloudscraper 
 from bs4 import BeautifulSoup
+from datetime import datetime
 from feedparser import parse as feedparse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -64,6 +65,8 @@ def rss_get(update, context):
         sendMessage(f"Use this format to fetch:\n/{BotCommands.RssGetCommand} Title value", context.bot, update.message)
         
 def rss_sub(update, context, new_title=None):
+    rss_dict = context.bot_data.setdefault('rss', {})
+
     if new_title is not None:
         title = new_title.strip()
         # Rest of the function code...
@@ -77,17 +80,23 @@ def rss_sub(update, context, new_title=None):
             feed_url = title_url[1] if len(title_url) > 1 else None
             exists = rss_dict.get(title)
             if exists is not None:
-                # If the title exists, check if the feed URL is already in the list.
-                if feed_url is not None:
+                # If the title exists, add all available feed URLs to the list.
+                if feed_url is None:
+                    for feed in exists:
+                        exists_feed_url = feed['url']
+                        for existing_feed in exists:
+                            if existing_feed['url'] == exists_feed_url:
+                                break
+                        else:
+                            exists.append({"url": exists_feed_url, "added": datetime.now()})
+                else:
+                    # If the user provided a feed URL, check if it's in the list of available feed URLs.
                     for feed in exists:
                         if feed["url"] == feed_url:
                             LOGGER.warning(f"Feed URL '{feed_url}' already subscribed to title '{title}'")
                             sendMessage(f"Feed URL '{feed_url}' already subscribed to title '{title}'", context.bot, update.message)
                             return
                     exists.append({"url": feed_url, "added": datetime.now()})
-                else:
-                    LOGGER.error("No feed URL provided for an existing title!")
-                    return sendMessage("No feed URL provided for an existing title! Please provide a feed URL.", context.bot, update.message)
             else:
                 # If the title doesn't exist, create a new entry in the dictionary with the feed URL.
                 if feed_url is not None:
@@ -99,7 +108,7 @@ def rss_sub(update, context, new_title=None):
             LOGGER.info(f"Rss Feed Title Added: {title}")
         except IndexError:
             msg = f"Use this format to add a feed URL\n/{BotCommands.RssSubCommand} Title|https://www.rss-url.com"
-            sendMessage(msg, context.bot, update.message)        
+            sendMessage(msg, context.bot, update.message)
 
 def rss_unsub(update, context):
     try:
