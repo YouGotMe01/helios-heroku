@@ -203,7 +203,7 @@ def rss_monitor(context):
                 # Send the torrent content as a message to the Telegram chat with .torrent extension
                 torrent_content = response.content
                 torrent_filename = f"{rss_d.entries[0]['title']}.torrent"
-                context.bot.send_document(chat_id=RSS_CHAT_ID, document=torrent_content, filename=torrent_filename, caption=f"{rss_d.entries[0]['title']} @eswar2242")                                             
+                context.bot.send_document(chat_id=RSS_CHAT_ID, document=torrent_content, filename=torrent_filename, caption=f"{rss_d.entries[0]['title']}    @eswar2242")                                             
             # Update the last_link and last_title in the dictionary (or database if you want to persist it).
             rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             DbManager().rss_update(name, str(last_link), str(last_title))
