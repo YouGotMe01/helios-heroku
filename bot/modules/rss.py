@@ -69,7 +69,8 @@ def rss_sub(update, context, new_title=None):
 
     if new_title is not None:
         title = new_title.strip()
-        # Rest of the function code...
+        # Rest of the function code for handling new titles...
+
     else:
         try:
             args = update.message.text.split(maxsplit=1)
@@ -78,37 +79,33 @@ def rss_sub(update, context, new_title=None):
             title_url = args[1].strip().split('|', 1)
             title = title_url[0]
             feed_url = title_url[1] if len(title_url) > 1 else None
+
+            if not feed_url:
+                raise ValueError("No feed URL provided for the new title!")
+
             exists = rss_dict.get(title)
             if exists is not None:
-                # If the title exists, add all available feed URLs to the list.
-                if feed_url is None:
-                    for feed in exists:
-                        exists_feed_url = feed['url']
-                        for existing_feed in exists:
-                            if existing_feed['url'] == exists_feed_url:
-                                break
-                        else:
-                            exists.append({"url": exists_feed_url, "added": datetime.now()})
-                else:
-                    # If the user provided a feed URL, check if it's in the list of available feed URLs.
-                    for feed in exists:
-                        if feed["url"] == feed_url:
-                            LOGGER.warning(f"Feed URL '{feed_url}' already subscribed to title '{title}'")
-                            sendMessage(f"Feed URL '{feed_url}' already subscribed to title '{title}'", context.bot, update.message)
-                            return
-                    exists.append({"url": feed_url, "added": datetime.now()})
+                # Check if the feed URL is already subscribed
+                for feed in exists:
+                    if feed["url"] == feed_url:
+                        LOGGER.warning(f"Feed URL '{feed_url}' already subscribed to title '{title}'")
+                        sendMessage(f"Feed URL '{feed_url}' already subscribed to title '{title}'", context.bot, update.message)
+                        return
+
+            # Add the new feed URL to the title or create a new entry in the dictionary.
+            new_feed_entry = {"url": feed_url, "added": datetime.now()}
+            if exists is not None:
+                exists.append(new_feed_entry)
             else:
-                # If the title doesn't exist, create a new entry in the dictionary with the feed URL.
-                if feed_url is not None:
-                    rss_dict[title] = [{"url": feed_url, "added": datetime.now()}]
-                else:
-                    LOGGER.error("No feed URL provided for the new title!")
-                    return sendMessage("No feed URL provided for the new title! Please provide a feed URL.", context.bot, update.message)
+                rss_dict[title] = [new_feed_entry]
+
             sendMessage(f"Title '{title}' subscribed!", context.bot, update.message)
-            LOGGER.info(f"Rss Feed Title Added: {title}")
-        except IndexError:
+            LOGGER.info(f"RSS Feed Title Added: {title}")
+
+        except (IndexError, ValueError) as e:
             msg = f"Use this format to add a feed URL\n/{BotCommands.RssSubCommand} Title|https://www.rss-url.com"
             sendMessage(msg, context.bot, update.message)
+
 
 def rss_unsub(update, context):
     try:
@@ -182,39 +179,49 @@ def rss_monitor(context):
         if len(rss_dict) == 0:
             rss_job.enabled = False
             return
-        rss_saver = rss_dict.copy()  # Create a copy of the rss_dict to avoid modifying the original while iterating.
+
+        rss_saver = rss_dict.copy()  # Create a copy of rss_dict to avoid modifying the original while iterating.
 
     for name, data in rss_saver.items():
         try:
             rss_d = feedparse(data[0])
+            if len(rss_d.entries) == 0:
+                LOGGER.warning(f"No entries found in the feed for: {name} - {data[0]}")
+                continue
+
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
 
             if data[1] == last_link or data[2] == last_title:
                 continue
 
+            LOGGER.info(f"New feed detected: {name} - {last_link}")
+
             # Fetch the torrent content from the link.
             if 'links' in rss_d.entries[0]:
                 url = rss_d.entries[0]['links'][0]['href']
             else:
                 url = rss_d.entries[0]['link']
+
             response = requests.get(url)
             if response.ok:
                 # Send the torrent content as a message to the Telegram chat with .torrent extension
                 torrent_content = response.content
                 torrent_filename = f"{rss_d.entries[0]['title']}.torrent"
-                context.bot.send_document(chat_id=RSS_CHAT_ID, document=torrent_content, filename=torrent_filename, caption=f"{rss_d.entries[0]['title']}    @Eswar2242")                                             
+                context.bot.send_document(chat_id=RSS_CHAT_ID, document=telegram.InputFile(fileobj=io.BytesIO(torrent_content), filename=torrent_filename), caption=f"{rss_d.entries[0]['title']}" )  (" @Eswar2242")
+            else:
+                LOGGER.error(f"Failed to fetch torrent content for: {name} - {last_link}")
+
             # Update the last_link and last_title in the dictionary (or database if you want to persist it).
             rss_dict[name] = [data[0], str(last_link), str(last_title), data[3]]
             DbManager().rss_update(name, str(last_link), str(last_title))
 
-            # You can send a confirmation message or log the new feed title here.
-            LOGGER.info(f"New Feed Name: {name}")
-            LOGGER.info(f"Last item: {last_link}")
+            LOGGER.info(f"Updated RSS information for: {name}")
 
         except Exception as e:
-            LOGGER.error(f"{e} Feed Name: {name} - Feed Link: {data[0]}")
+            LOGGER.error(f"Error processing feed: {name} - {data[0]} - Error: {e}")
             continue
+
 
 if DB_URI is not None and RSS_CHAT_ID is not None:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
