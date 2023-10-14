@@ -16,12 +16,11 @@ from bot import LOGGER, dispatcher, OWNER_ID
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
-from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4
-from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
 
 def scrapper(update, context):
     user_id_ = update.message.from_user.id
+    message:Message = update.effective_message
     link = None
     if message.reply_to_message: link = message.reply_to_message.text
     else:
