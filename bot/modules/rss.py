@@ -225,7 +225,7 @@ def rss_monitor(context):
                         else: 
                             magnets.append(url)
                         for txt in magnets:
-                            feed_msg = f"/{RSS_COMMAND} {txt}"
+                            feed_msg = f"{RSS_COMMAND} {txt}"
                             sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
