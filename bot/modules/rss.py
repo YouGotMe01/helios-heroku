@@ -1,4 +1,4 @@
-import re
+import request
 import cloudscraper 
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
