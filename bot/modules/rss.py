@@ -1,3 +1,4 @@
+import re
 import request
 import cloudscraper 
 from bs4 import BeautifulSoup
