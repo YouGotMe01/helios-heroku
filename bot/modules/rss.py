@@ -1,7 +1,10 @@
 import re
 import request
 import cloudscraper 
-from bs4 import BeautifulSoup
+from re import S
+from requests import get
+from re import match as rematch, findall, sub as resub
+from bs4 import BeautifulSoup, NavigableString, Tag
 from feedparser import parse as feedparse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -215,19 +218,15 @@ def rss_monitor(context):
                 except IndexError:
                     url = rss_d.entries[feed_count]['link']
                 if RSS_COMMAND := config_dict['RSS_COMMAND']:
-                    response = requests.get(url)
-                    if response.status_code == 200:
-                        soup = BeautifulSoup(response.text, 'html.parser')
-                        anchor_tags = soup.find_all('a', href=True)
-                        magnet_links = []
-                        for tag in anchor_tags:
-                            href = tag['href']
-                            if href.startswith("magnet:?xt=urn:btih:"):
-                                magnet_links.append(href)
-                            if magnet_links:
-                                for link in magnet_links:
-                                    feed_msg = f"{RSS_COMMAND} {link}"
-                                    sendRss(feed_msg, context.bot)
+                    res = rget(url)
+                    soup = BeautifulSoup(res.text, 'html.parser')
+                    mystx = soup.select(r'a[href^="magnet:?xt=urn:btih:"]')
+                    linkz=[]
+                    for hy in mystx:
+                        linkz.append(hy['href'])
+                    for txt in linkz:
+                        feed_msg = f"{RSS_COMMAND} {txt}"
+                        sendRss(feed_msg, context.bot)
                 else:
                     feed_msg = f"<b>Name: </b><code>{rss_d.entries[feed_count]['title'].replace('>', '').replace('<', '')}</code>\n\n"
                     feed_msg += f"<b>Link: </b><code>{url}</code>"
