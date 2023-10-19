@@ -2,7 +2,7 @@ import re
 import request
 import cloudscraper 
 from re import S
-from requests import get
+from requests import get as rget
 from re import match as rematch, findall, sub as resub
 from bs4 import BeautifulSoup, NavigableString, Tag
 from feedparser import parse as feedparse
